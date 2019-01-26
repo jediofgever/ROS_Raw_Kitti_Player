@@ -1,0 +1,31 @@
+
+<launch>
+  <param name="base_dir" type="string" value= "/home/atas/MSc_Thesis/dataset/train/"/>
+  <param name="velodyne_link" type="string" value="velodyne_link" />
+  <param name="camera_link" type="string" value="camera_link" />
+  <param name="label_dir" type="string" value="label_2/" />
+   <param name="image_dir" type="string" value="image_2/" />
+  <param name="pcd_file_dir" type="string" value="velodyne/pcds/" />
+  <param name="image_file_extension" type="string" value=".png" />
+  <param name="pcd_file_extension" type="string" value=".pcd" />
+  <param name="label_file_extension" type="string" value=".txt" />
+  <param name="execution_frequency" type="int" value="1" />
+  <param name="number_of_pcd_files" type="int" value="7480" />
+
+  <!-- Run the visualization node -->
+  <node pkg="kitti_ros" type="kitti_ros_node" name="kitti_ros_node" output="screen">
+
+  </node>
+
+  <!-- Launch rviz for visualization -->
+  <node pkg="rviz" type="rviz" name="my_rviz"
+args="-d $(find kitti_ros)config/default.rviz"/>
+
+ <node pkg="tf" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 map base_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="velodyne_link" args="0 0 1.73 0 0 0 base_link velodyne_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="camera_link" args="0.0 0 1.63 -1.57 0 -1.57  base_link camera_link 100"/>
+
+
+
+ 
+</launch>

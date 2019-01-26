@@ -1,0 +1,15 @@
+kitti_node:
+  velodyne_link: "velodyne_link"
+  camera_link: "camera_link"
+  base_dir: "/home/atas/MSc_Thesis/dataset/train/"
+  velodyne_dir: "velodyne/pcds/"
+  label_dir: "label_2/"
+  pcd_file_extension: ".pcd"
+  label_file_extension: ".txt"
+  execution_frequency: 10
+  number_of_pcd_files: 7480
+
+
+
+
+
