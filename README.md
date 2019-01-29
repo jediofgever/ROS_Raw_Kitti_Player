@@ -1,9 +1,9 @@
 #### ROS_Raw_Kitti_Player;
 
-Ros Package to access  manipulate and process Raw KITTI dataset. 
+Ros Package to access  manipulate and process Raw KITTI dataset. In this Project there is sensor fusion, and some other perception is done. Once it is complete I will release project Manual. In current phase , once you execute this Project you should see something similiar to below picture.
 
-A Special Thanks to [Simon](https://github.com/appinho) for letting me to use his helper package which saved me bunch of time. 
-Checkout his awesome ROS Perception [here](https://github.com/appinho/SARosPerceptionKitti)
+
+![](resources/ros_raw_kitti.png)
 
 
 ## Installing ROS
@@ -42,12 +42,12 @@ It's convenient if the ROS environment variables are automatically added to your
 
  ## Reconfigure KITTI data Path in launch file 
 
- under this directory kitti_ros/launch directory find 'kitti_ros_node.launch' file,
- change the data paths according to your own envoirmment For example my base directory for KITTI data is as follow ; 
+ under this directory 'ROS_Raw_Kitti_Player/kitti_ros/launch',  find 'kitti_ros_node.launch' file,
+ change the data paths according to your own envoirmment. For example my base directory for KITTI data is as follow ; 
 
  > /home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync/
 
- basically once you changed username with yours , it should be fine.
+ basically once you need to change username with yours , it should be fine afterwards.
 
  ## Execute Kitti_ros node
 
@@ -57,10 +57,14 @@ It's convenient if the ROS environment variables are automatically added to your
 
  > roslaunch kitti_ros kitti_ros_node.launch
 
- Now RVIZ should open and you should be able to see something similar to below picture
+ Now RVIZ should open and you should be able to see something similar to above picture
 
 
-![](resources/ros_raw_kitti.png)
+## Referencees
+
+
+A Special Thanks to [Simon](https://github.com/appinho) for letting me to use his helper package which saved me bunch of time. 
+Checkout his awesome ROS Perception project [here](https://github.com/appinho/SARosPerceptionKitti)
 
 
 
