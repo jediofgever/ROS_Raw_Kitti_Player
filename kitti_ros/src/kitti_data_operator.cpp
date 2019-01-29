@@ -29,9 +29,24 @@ const cv::Mat KITTIDataOperator::GetCameraImage() const {
 void KITTIDataOperator::SetCameraImage(cv::Mat value) { camera_image_ = value; }
 
 void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
+    // load point cloud
+    fstream input(pcd_filename.c_str(), ios::in | ios::binary);
+    if (!input.good()) {
+        cerr << "Could not read  POINT CLOUD file: " << pcd_filename << endl;
+        exit(EXIT_FAILURE);
+    }
+    input.seekg(0, ios::beg);
+
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::io::loadPCDFile(pcd_filename, *cloud);
+
+    for (int i = 0; input.good() && !input.eof(); i++) {
+        pcl::PointXYZRGB point;
+        input.read((char *)&point.x, 3 * sizeof(float));
+        input.read((char *)&point.r, sizeof(float));
+        cloud->push_back(point);
+    }
+    input.close();
 
     // Define matrix to write velodyne points into
 
@@ -43,6 +58,7 @@ void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
         matrix_velodyne_points(3, i) = 1;
     }
 
+    // Transform Velodyne Points to Camerta Frame
     matrix_velodyne_points = tools_.transformVeloToCam(matrix_velodyne_points);
 
     for (int i = 0; i < matrix_velodyne_points.cols(); i++) {
@@ -51,6 +67,8 @@ void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
         cloud->points[i].z = matrix_velodyne_points(2, i);
     }
 
+    // declare ROS type Point cloud to puvlish pointcloud which is in camera
+    // frame now
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*cloud, cloud_msg);
 

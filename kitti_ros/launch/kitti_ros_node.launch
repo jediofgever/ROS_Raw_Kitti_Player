@@ -1,16 +1,14 @@
 
 <launch>
-  <param name="base_dir" type="string" value= "/home/atas/MSc_Thesis/dataset/train/"/>
+  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync/"/>
   <param name="velodyne_link" type="string" value="velodyne_link" />
   <param name="camera_link" type="string" value="camera_link" />
-  <param name="label_dir" type="string" value="label_2/" />
-   <param name="image_dir" type="string" value="image_2/" />
-  <param name="pcd_file_dir" type="string" value="velodyne/pcds/" />
+  <param name="image_dir" type="string" value="image_02/data/" />
+  <param name="pcd_file_dir" type="string" value="velodyne_points/data/" />
   <param name="image_file_extension" type="string" value=".png" />
-  <param name="pcd_file_extension" type="string" value=".pcd" />
-  <param name="label_file_extension" type="string" value=".txt" />
+  <param name="pcd_file_extension" type="string" value=".bin" />
   <param name="execution_frequency" type="int" value="1" />
-  <param name="number_of_pcd_files" type="int" value="7480" />
+  <param name="number_of_pcd_files" type="int" value="108" />
 
   <!-- Run the visualization node -->
   <node pkg="kitti_ros" type="kitti_ros_node" name="kitti_ros_node" output="screen">

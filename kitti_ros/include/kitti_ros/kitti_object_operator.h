@@ -1,6 +1,7 @@
 #ifndef kittiobjop_H
 #define kittiobjop_H
 
+#include <cv_bridge/cv_bridge.h>
 #include <helper/tools.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
@@ -8,12 +9,10 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <opencv2/opencv.hpp>
 #include <sstream>
 #include <string>
 #include "util/kitti_ros_utils.h"
-
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
 
 using namespace helper;
 using namespace std;

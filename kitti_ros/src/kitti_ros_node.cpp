@@ -21,21 +21,17 @@ int main(int argc, char **argv) {
 KittiRosNode::KittiRosNode() {
     nh_ = ros::NodeHandlePtr(new ros::NodeHandle());
 
-    nh_->param<string>("base_dir", base_dir,
-                       "/home/atas/MSc_Thesis/dataset/train/");
-    nh_->param<string>("pcd_file_dir", pcd_file_dir, "velodyne/pcds/");
-    nh_->param<string>("label_dir", label_dir, "label_2/");
-    nh_->param<string>("image_dir", image_dir, "image_2/");
-
-    nh_->param<string>("pcd_file_extension", pcd_file_extension, ".pcd");
+    nh_->param<string>(
+        "base_dir", base_dir,
+        "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync");
+    nh_->param<string>("pcd_file_dir", pcd_file_dir, "velodyne_points/data/");
+    nh_->param<string>("image_dir", image_dir, "image_02/data/");
+    nh_->param<string>("pcd_file_extension", pcd_file_extension, ".bin");
     nh_->param<string>("image_file_extension", image_file_extension, ".png");
-
-    nh_->param<string>("label_file_extension", label_file_extension, ".txt");
-    nh_->param<int>("number_of_pcd_files", number_of_pcd_files, 7480);
+    nh_->param<int>("number_of_pcd_files", number_of_pcd_files, 108);
 
     ROS_INFO_STREAM("base_dir: " << base_dir);
     ROS_INFO_STREAM("pcd_file_dir: " << pcd_file_dir);
-    ROS_INFO_STREAM("label_dir: " << label_dir);
     ROS_INFO_STREAM("pcd_file_extension: " << pcd_file_extension);
     ROS_INFO_STREAM("label_file_extension: " << label_file_extension);
     ROS_INFO_STREAM("number_of_pcd_files: " << number_of_pcd_files);
@@ -43,7 +39,7 @@ KittiRosNode::KittiRosNode() {
     sensor_fusion_.SetKITTIDataOperator(&kitti_data_operator_);
     sensor_fusion_.SetKittiObjectOperator(&kitti_object_operator_);
 
-    sleep(10);
+    sleep(1);
 }
 
 // Deconstruct
@@ -58,22 +54,18 @@ void KittiRosNode::ProcessNode() {
 
         // a buffer to walk through each files
         // for KITTI scnerios setw(10)
-        buffer << setfill('0') << setw(6) << i;
+        buffer << setfill('0') << setw(10) << i;
 
         // define path to pcd file to read point cloud
         std::string pcd_file =
             base_dir + pcd_file_dir + buffer.str() + pcd_file_extension;
+
         KittiRosNode::ProcessKittiPointCloud(pcd_file);
 
         // define path to image file
         std::string image_file =
             base_dir + image_dir + buffer.str() + image_file_extension;
         KittiRosNode::ProcessKittiImage(image_file);
-
-        // Read lables of this frma evisualize ground truth boxes in RVIZ ,
-        // oPTIONAL
-        std::string label_file =
-            base_dir + label_dir + buffer.str() + label_file_extension;
 
         // Get lidar scan and Camera Image for Fusion
         sensor_fusion_.FillKittiData4Fusion();
@@ -83,18 +75,18 @@ void KittiRosNode::ProcessNode() {
         // Process Fusion Publish Results and Raw Data
         sensor_fusion_.ProcessFusion(training_image_name);
 
-        std::ifstream label_infile(label_file.c_str());
+        /*std::ifstream label_infile(label_file.c_str());
         kitti_objects_ =
             kitti_object_operator_.GetAllKittiObjectsFrame(label_infile);
 
         sensor_fusion_.ProcessLabelofBEVImage(label_file, training_image_name);
         KittiRosNode::ProcessKittiGroundTruthLabel(label_file,
-                                                   training_image_name);
+                                                   training_image_name);*/
 
         // find Local costmap and Obstacles based on local costmap
         KittiRosNode::ObstacleDetectionandGridCellCostmap();
 
-        sleep(20);
+        // sleep(5);
     }
 }
 

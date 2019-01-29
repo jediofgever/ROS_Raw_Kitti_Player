@@ -1,3 +1,4 @@
+#include <cv_bridge/cv_bridge.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -6,13 +7,11 @@
 #include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-
 #include <sensor_msgs/PointCloud2.h>
+#include <fstream>
+#include <opencv2/opencv.hpp>
 #include <string>
 #include "kitti_object_operator.h"
-
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
 
 class KITTIDataOperator {
    public:
