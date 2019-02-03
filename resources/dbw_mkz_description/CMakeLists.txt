@@ -43,6 +43,4 @@ install(DIRECTORY meshes urdf launch
         PATTERN *.tar.gz EXCLUDE
 )
 
-if (CATKIN_ENABLE_TESTING)
-  add_subdirectory(tests)
-endif()
+
