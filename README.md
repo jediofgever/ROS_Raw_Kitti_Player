@@ -32,11 +32,11 @@ It's convenient if the ROS environment variables are automatically added to your
  > echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
  > source ~/.bashrc
 
- ## Clone and Build This Repository
+ ## Clone and Build This Repository(Choose Right branch for yourself)
 
  > cd catkin_ws/src
 
- > git clone https://github.com/jediofgever/ROS_Raw_Kitti_Player.git
+ > git clone -b develop https://github.com/jediofgever/ROS_Raw_Kitti_Player.git
 
  > cd ROS_Raw_Kitti_Player
 
