@@ -52,6 +52,41 @@ Eigen::MatrixXd ComputeCorners(std::vector<float> dimensions,
     return corners;
 }
 
+Eigen::MatrixXd ComputeCornersfromBBX(std::vector<float> dimensions,
+                                      std::vector<float> positions, float ry) {
+    float h, w, l;
+    h = dimensions[0];
+    w = dimensions[1];
+    l = dimensions[2];
+
+    Eigen::MatrixXd corners(3, 8);
+    Eigen::Matrix3d rot;
+
+    rot << +cos(ry), 0, +sin(ry), 0, 1, 0, -sin(ry), 0, +cos(ry);
+
+    Eigen::MatrixXd x(1, 8);
+    x << -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2;
+
+    Eigen::MatrixXd y(1, 8);
+    y << w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2;
+
+    Eigen::MatrixXd z(1, 8);
+    z << h, h, h, h, 0, 0, 0, 0;
+
+    corners.row(0) = x;
+    corners.row(1) = y;
+    corners.row(2) = z;
+
+    corners = rot * corners;
+    // std::cout << x.size();
+    for (int k = 0; k < x.size(); k++) {
+        corners(0, k) += positions[0];
+        corners(1, k) += positions[1];
+        corners(2, k) += positions[2];
+    }
+    return corners;
+}
+
 void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
                    double pz, double ox, double oy, double oz, double ow,
                    double sx, double sy, double sz, double r, double g,

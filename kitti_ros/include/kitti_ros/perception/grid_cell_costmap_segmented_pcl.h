@@ -8,6 +8,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point32.h>
+#include <kitti_ros/util/kitti_ros_utils.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>

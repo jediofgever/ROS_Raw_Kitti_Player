@@ -8,6 +8,8 @@
 #include <kitti_ros/perception/grid_cell_costmap_segmented_pcl.h>
 #include <boost/foreach.hpp>
 
+using namespace kitti_ros_util;
+
 // Construct Copilot Costmap
 GridCellCostmapSegmentedPCL::GridCellCostmapSegmentedPCL() {
     // Init NodeHandler Ptr
@@ -234,6 +236,9 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
             cv::findContours(image, contours, hierarchy, cv::RETR_TREE,
                              cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
+            // push boxes to this marker array
+            visualization_msgs::MarkerArray gt3Dbox_array;
+
             for (int i = 0; i < contours.size(); i++) {
                 float ang;
                 cv::RotatedRect minRect;
@@ -253,8 +258,12 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
                             (info.height * info.resolution / 2);
 
                     // Doing this because of  MinRect logic
+
                     if (minRect.size.height < minRect.size.width) {
                         std::swap(minRect.size.width, minRect.size.height);
+                        minRect.angle = -minRect.angle;
+                    } else {
+                        minRect.angle = -minRect.angle - 90;
                     }
 
                     // create A marker to represent The MinRect AROUND This
@@ -295,7 +304,57 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
                     marker.color.g = 0.5;
                     marker.color.b = i % 2;
                     // Store this marker in array
-                    detected_obstacles_.markers.push_back(marker);
+
+                    visualization_msgs::Marker visualization_marker_;
+
+                    visualization_marker_.type =
+                        visualization_msgs::Marker::LINE_STRIP;
+                    visualization_marker_.header.frame_id = "base_link";
+                    visualization_marker_.header.stamp = ros::Time::now();
+                    visualization_marker_.ns = "DetectionBox";
+                    visualization_marker_.id = i;
+                    visualization_marker_.action =
+                        visualization_msgs::Marker::ADD;
+                    visualization_marker_.lifetime = ros::Duration(0.2);
+
+                    double ox, oy, oz, ow;
+                    double rotation_y = minRect.angle * 3.14 / 180.0;
+
+                    kitti_ros_util::EulerAngleToQuaternion(rotation_y, &ox, &oy,
+                                                           &oz, &ow);
+
+                    std::vector<float> dimensions, position;
+
+                    dimensions.push_back(2.0);
+                    dimensions.push_back(minRect.size.width * info.resolution);
+                    dimensions.push_back(minRect.size.height * info.resolution);
+
+                    position.push_back(aux_x);
+                    position.push_back(aux_y);
+                    position.push_back(0);
+
+                    Eigen::MatrixXd corners;
+
+                    corners = kitti_ros_util::ComputeCornersfromBBX(
+                        dimensions, position, rotation_y);
+                    kitti_ros_util::SetMarkerData(&visualization_marker_, 0, 0,
+                                                  0, ox, oy, oz, ow, 0.1, 0, 0,
+                                                  0, 0, 1, 1);
+
+                    for (int c = 0; c < 8; c++) {
+                        geometry_msgs::Point korner_point, prev_korner_point;
+                        korner_point.x = corners(0, c);
+                        korner_point.y = corners(1, c);
+                        korner_point.z = corners(2, c);
+
+                        visualization_marker_.points.push_back(korner_point);
+                    }
+
+                    gt3Dbox_array.markers.push_back(visualization_marker_);
+
+                    detected_obstacles_.markers.push_back(
+                        visualization_marker_);
+                    // detected_obstacles_.markers.push_back(marker);
                 }
             }
         }

@@ -16,6 +16,9 @@ void EulerAngleToQuaternion(double ang, double *x, double *y, double *z,
 Eigen::MatrixXd ComputeCorners(std::vector<float> dimensions,
                                std::vector<float> positions, float ry);
 
+Eigen::MatrixXd ComputeCornersfromBBX(std::vector<float> dimensions,
+                                      std::vector<float> positions, float ry);
+
 void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
                    double pz, double ox, double oy, double oz, double ow,
                    double sx, double sy, double sz, double r, double g,
