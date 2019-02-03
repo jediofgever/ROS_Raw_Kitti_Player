@@ -2,18 +2,15 @@ cmake_minimum_required(VERSION 2.8.3)
 project(kitti_ros)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
- add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
-catkin_package(
-  INCLUDE_DIRS include 
-  LIBRARIES kitti_ros 
-  CATKIN_DEPENDS roscpp std_msgs  helper
-)
+
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  pcl_conversions
   pcl_ros
   roscpp
   sensor_msgs
@@ -21,6 +18,25 @@ find_package(catkin REQUIRED COMPONENTS
   helper
   cv_bridge
 )
+find_package(PCL 1.8 REQUIRED COMPONENTS
+    common
+    io
+    filters
+    features
+    segmentation
+)
+
+add_definitions(${PCL_DEFINITIONS})
+link_directories(${PCL_LIBRARY_DIRS})
+find_package(OpenCV REQUIRED )
+find_package(Eigen3 REQUIRED)
+
+catkin_package(
+  CATKIN_DEPENDS roscpp std_msgs   
+  INCLUDE_DIRS include 
+  LIBRARIES kitti_ros
+ )
+
 
 include_directories(
   include
@@ -28,24 +44,19 @@ include_directories(
   ${helper_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
  
-
-find_package(PCL  REQUIRED)
-find_package(OpenCV REQUIRED )
-
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-
 
 add_executable (kitti_ros_node  src/kitti_ros_node.cpp
 src/kitti_data_operator.cpp
 src/kitti_object_operator.cpp
 src/util/kitti_ros_utils.cpp
 src/perception/sensor_fusion.cpp
-src/perception/grid_cell_costmap.cpp)
-target_link_libraries (kitti_ros_node ${PCL_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES} helper)
+src/perception/grid_cell_costmap.cpp
+src/perception/grid_cell_costmap_segmented_pcl.cpp)
+target_link_libraries (kitti_ros_node ${PCL_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Eigen3_LIBRARIES} 
+    )
 
 
 
@@ -154,10 +165,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

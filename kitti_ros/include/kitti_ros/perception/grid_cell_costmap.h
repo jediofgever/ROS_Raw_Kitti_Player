@@ -23,6 +23,9 @@
 // output: Obstacle Detection visualization_msgs/MarkerArray
 // Subscribes to laser_scan topic provided by simulated LIDAR, Produces a Local
 // Costmap, Regresses a minial Rectangle around each obstacle
+
+namespace gridcellcostmap {
+
 class GridCellCostmap {
     // Public Methods
    public:
@@ -102,3 +105,5 @@ class GridCellCostmap {
     // Publish Local Costmap(Occupancy Grid )
     ros::Publisher local_costmap_publisher_;
 };
+
+}  // namespace gridcellcostmap

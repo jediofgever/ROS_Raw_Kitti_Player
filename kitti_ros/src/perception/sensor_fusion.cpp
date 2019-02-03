@@ -7,6 +7,12 @@ SensorFusion::SensorFusion() {
     rgb_pointcloud_pub_ =
         nh_->advertise<sensor_msgs::PointCloud2>("kitti_rgb_pointcloud", 1);
 
+    // Publish segmented pointcloud from maskrcnn detection image;
+
+    segmented_pointcloud_from_maskrcnn_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>(
+            "segmented_pointcloud_from_maskrcnn", 1);
+
     // publish point cloud projected IMage
     pointcloud_projected_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("pointcloud_projected_image", 1);
@@ -38,6 +44,14 @@ void SensorFusion::SetKittiObjectOperator(KittiObjectOperator* value) {
 
 const KittiObjectOperator* SensorFusion::GetKittiObjectOperator() {
     return kitti_object_operator_;
+}
+
+void SensorFusion::SetSegmentedLidarScan(sensor_msgs::PointCloud2 value) {
+    segmented_lidar_scan_ = value;
+}
+
+sensor_msgs::PointCloud2 SensorFusion::GetSegmentedLidarScan() {
+    return segmented_lidar_scan_;
 }
 
 void SensorFusion::FillKittiData4Fusion() {
@@ -279,4 +293,93 @@ void SensorFusion::ProcessLabelofBEVImage(std::string& label_infile_string,
         }
     }
     cv::imwrite(image_file_path, BEV_image);
+}
+
+void SensorFusion::SegmentedPointCloudFromMaskRCNN(
+    cv::Mat* maskrcnn_segmented_image) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
+        new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::fromROSMsg(lidar_scan_, *in_cloud);
+
+    Eigen::MatrixXf matrix_velodyne_points =
+        MatrixXf::Zero(4, in_cloud->size());
+
+    for (int i = 0; i < in_cloud->size(); ++i) {
+        matrix_velodyne_points(0, i) = in_cloud->points[i].x;
+        matrix_velodyne_points(1, i) = in_cloud->points[i].y;
+        matrix_velodyne_points(2, i) = in_cloud->points[i].z;
+        matrix_velodyne_points(3, i) = 1;
+    }
+
+    Eigen::MatrixXf matrix_image_points =
+        tools_.transformCamToRectCam(matrix_velodyne_points);
+    matrix_image_points = tools_.transformRectCamToImage(matrix_image_points);
+
+    for (int m = 0; m < matrix_image_points.cols(); m++) {
+        cv::Point point;
+        point.x = matrix_image_points(0, m);
+        point.y = matrix_image_points(1, m);
+
+        // Store korners in pixels only of they are on image plane
+        if (point.x >= 0 && point.x <= 1242) {
+            if (point.y >= 0 && point.y <= 375) {
+                pcl::PointXYZRGB colored_3d_point;
+                pcl::PointXYZ out_cloud_point;
+
+                cv::Vec3b rgb_pixel =
+                    maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
+
+                colored_3d_point.x = matrix_velodyne_points(0, m);
+                colored_3d_point.y = matrix_velodyne_points(1, m);
+                colored_3d_point.z = matrix_velodyne_points(2, m);
+
+                colored_3d_point.r = rgb_pixel[2];
+                colored_3d_point.g = rgb_pixel[1];
+                colored_3d_point.b = rgb_pixel[0];
+
+                out_cloud_point.x = matrix_velodyne_points(0, m);
+                out_cloud_point.y = matrix_velodyne_points(1, m);
+                out_cloud_point.z = matrix_velodyne_points(2, m);
+
+                if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
+                    rgb_pixel[0] != 255 && colored_3d_point.z > 0 &&
+                    colored_3d_point.y < 1.6) {
+                    rgb_out_cloud->points.push_back(colored_3d_point);
+                    out_cloud->points.push_back(out_cloud_point);
+                }
+            }
+        }
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(
+        new pcl::PointCloud<pcl::PointXYZ>);
+
+    // Create the filtering object
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(rgb_out_cloud);
+    sor.setMeanK(10);
+    sor.setStddevMulThresh(0.2);
+    sor.filter(*rgb_out_cloud);
+
+    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> outrem;
+    // build the filter
+    outrem.setInputCloud(rgb_out_cloud);
+    outrem.setRadiusSearch(0.3);
+    outrem.setMinNeighborsInRadius(2);
+    // apply filter
+    outrem.filter(*rgb_out_cloud);
+
+    // prepare and publish RGB colored Lidar scan
+    sensor_msgs::PointCloud2 maskrcnn_cloud_msg;
+    pcl::toROSMsg(*rgb_out_cloud, maskrcnn_cloud_msg);
+    maskrcnn_cloud_msg.header = lidar_scan_.header;
+    segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
+
+    SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
 }

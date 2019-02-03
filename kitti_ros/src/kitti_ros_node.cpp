@@ -26,6 +26,12 @@ KittiRosNode::KittiRosNode() {
         "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync");
     nh_->param<string>("pcd_file_dir", pcd_file_dir, "velodyne_points/data/");
     nh_->param<string>("image_dir", image_dir, "image_02/data/");
+    nh_->param<string>("maskrcnn_detection_image_dir",
+                       maskrcnn_detection_image_dir,
+                       "maskrcnn_detections/detection_image_02/");
+    nh_->param<string>("maskrcnn_detection_label_dir",
+                       maskrcnn_detection_label_dir,
+                       "maskrcnn_detections/detection_label_02/");
     nh_->param<string>("pcd_file_extension", pcd_file_extension, ".bin");
     nh_->param<string>("image_file_extension", image_file_extension, ".png");
     nh_->param<int>("number_of_pcd_files", number_of_pcd_files, 108);
@@ -75,6 +81,13 @@ void KittiRosNode::ProcessNode() {
         // Process Fusion Publish Results and Raw Data
         sensor_fusion_.ProcessFusion(training_image_name);
 
+        std::string maskrcnn_detection_image_path =
+            base_dir + maskrcnn_detection_image_dir + buffer.str() +
+            image_file_extension;
+
+        cv::Mat maskrcnn_image = cv::imread(maskrcnn_detection_image_path, 1);
+        sensor_fusion_.SegmentedPointCloudFromMaskRCNN(&maskrcnn_image);
+
         /*std::ifstream label_infile(label_file.c_str());
         kitti_objects_ =
             kitti_object_operator_.GetAllKittiObjectsFrame(label_infile);
@@ -85,6 +98,7 @@ void KittiRosNode::ProcessNode() {
 
         // find Local costmap and Obstacles based on local costmap
         KittiRosNode::ObstacleDetectionandGridCellCostmap();
+        KittiRosNode::ObstacleDetectionSegmentedPCL();
 
         // sleep(5);
     }
@@ -114,4 +128,14 @@ void KittiRosNode::ObstacleDetectionandGridCellCostmap() {
         new sensor_msgs::PointCloud2(in_cloud));
 
     grid_cell_costmap_.DetectObstacles(cld_ptr);
+}
+
+void KittiRosNode::ObstacleDetectionSegmentedPCL() {
+    sensor_msgs::PointCloud2 in_cloud = sensor_fusion_.GetSegmentedLidarScan();
+    in_cloud.header.stamp = ros::Time::now();
+    in_cloud.header.frame_id = "camera_link";
+    sensor_msgs::PointCloud2::ConstPtr cld_ptr(
+        new sensor_msgs::PointCloud2(in_cloud));
+
+    grid_cell_costmap_segmented_pcl_.DetectObstacles(cld_ptr);
 }

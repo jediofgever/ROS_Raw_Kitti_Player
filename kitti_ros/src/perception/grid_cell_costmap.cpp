@@ -8,6 +8,8 @@
 #include <kitti_ros/perception/grid_cell_costmap.h>
 #include <boost/foreach.hpp>
 
+namespace gridcellcostmap {
+
 // Construct Copilot Costmap
 GridCellCostmap::GridCellCostmap() {
     // Init NodeHandler Ptr
@@ -301,3 +303,4 @@ void GridCellCostmap::DetectObstacles(
     // finally Publish all markers
     detected_obstacles_publisher_.publish(detected_obstacles_);
 }
+}  // namespace gridcellcostmap

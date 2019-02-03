@@ -1,9 +1,11 @@
 #include <kitti_ros/perception/grid_cell_costmap.h>
+#include <kitti_ros/perception/grid_cell_costmap_segmented_pcl.h>
 #include <kitti_ros/perception/sensor_fusion.h>
 #include <iostream>
 #include <sstream>
 
 using namespace std;
+using namespace gridcellcostmap;
 
 class KittiRosNode {
    public:
@@ -20,6 +22,8 @@ class KittiRosNode {
 
     void ObstacleDetectionandGridCellCostmap();
 
+    void ObstacleDetectionSegmentedPCL();
+
    private:
     ros::NodeHandlePtr nh_;
 
@@ -33,11 +37,15 @@ class KittiRosNode {
 
     GridCellCostmap grid_cell_costmap_;
 
+    GridCellCostmapSegmentedPCL grid_cell_costmap_segmented_pcl_;
+
     std::string base_dir;
     std::string pcd_file_dir;
     std::string image_dir;
     std::string label_dir;
+    std::string maskrcnn_detection_image_dir;
 
+    std::string maskrcnn_detection_label_dir;
     std::string pcd_file_extension;
     std::string label_file_extension;
     std::string image_file_extension;

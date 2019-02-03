@@ -15,15 +15,22 @@
 
   </node>
 
+
+<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
+
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find dbw_mkz_description)/urdf/mkz.urdf.xacro" />
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="30.0" />
+  </node>
+
   <!-- Launch rviz for visualization -->
   <node pkg="rviz" type="rviz" name="my_rviz"
 args="-d $(find kitti_ros)config/default.rviz"/>
 
- <node pkg="tf" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 map base_link 100"/>
-  <node pkg="tf" type="static_transform_publisher" name="velodyne_link" args="0 0 1.73 0 0 0 base_link velodyne_link 100"/>
-  <node pkg="tf" type="static_transform_publisher" name="camera_link" args="0.0 0 1.63 -1.57 0 -1.57  base_link camera_link 100"/>
+
+<node pkg="tf" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 map base_link 100"/>
+<node pkg="tf" type="static_transform_publisher" name="velodyne_link" args="0 0 1.73 0 0 0 base_link velodyne_link 100"/>
+<node pkg="tf" type="static_transform_publisher" name="camera_link" args="0.0 0 1.63 -1.57 0 -1.57  base_link camera_link 100"/>
 
 
-
- 
 </launch>
