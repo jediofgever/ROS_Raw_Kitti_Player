@@ -1,0 +1,6 @@
+[submodule "object_builders_lib"]
+	path = object_builders_lib
+	url = https://github.com/LidarPerception/object_builders_lib
+[submodule "common_lib"]
+	path = common_lib
+	url = https://github.com/LidarPerception/common_lib
