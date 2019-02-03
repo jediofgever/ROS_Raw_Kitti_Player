@@ -63,7 +63,8 @@
   <exec_depend>std_msgs</exec_depend>
   <build_depend>helper</build_depend>
   <exec_depend>helper</exec_depend>
-
+  <build_depend>common_lib</build_depend>
+  <depend>object_builders_lib</depend>
 
 
 

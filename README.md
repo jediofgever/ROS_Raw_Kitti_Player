@@ -38,6 +38,10 @@ It's convenient if the ROS environment variables are automatically added to your
 
  > git clone https://github.com/jediofgever/ROS_Raw_Kitti_Player.git
 
+ > cd ROS_Raw_Kitti_Player
+
+ > git submodule update --init --recursive
+
  > cd .. && catkin_make 
 
  ## Reconfigure KITTI data Path in launch file 

@@ -17,6 +17,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   helper
   cv_bridge
+  cmake_modules
+  common_lib
+  object_builders_lib
 )
 find_package(PCL 1.8 REQUIRED COMPONENTS
     common
@@ -32,7 +35,7 @@ find_package(OpenCV REQUIRED )
 find_package(Eigen3 REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs   
+  CATKIN_DEPENDS roscpp std_msgs object_builders_lib   
   INCLUDE_DIRS include 
   LIBRARIES kitti_ros
  )

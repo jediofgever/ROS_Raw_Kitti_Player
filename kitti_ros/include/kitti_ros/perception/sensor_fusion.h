@@ -8,6 +8,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <ros/ros.h>
+#include <object_builders/base_object_builder.hpp>
+#include <object_builders/object_builder_manager.hpp>
 
 class SensorFusion {
    public:
