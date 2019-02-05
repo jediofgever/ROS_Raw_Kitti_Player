@@ -352,10 +352,6 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
                                                   0, 0, 1, 1);
                     kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
                                                           &raw_kitti_image);
-                    cv::imwrite(
-                        "/home/atas/kitti_data/2011_09_26/"
-                        "2011_09_26_drive_0001_sync/box_img.png",
-                        raw_kitti_image);
 
                     for (int c = 0; c < 8; c++) {
                         geometry_msgs::Point korner_point, prev_korner_point;

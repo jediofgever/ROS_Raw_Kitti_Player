@@ -455,7 +455,7 @@ void SensorFusion::ProcessObjectBuilder(
         jsk_recognition_msgs::BoundingBox box;
         box.header.frame_id = "camera_link";
         autosense::ObjectPtr obj_ptr = objects.at(k);
-        double sx, double sy, d box.dimensions.x = obj_ptr->length;
+        box.dimensions.x = obj_ptr->length;
         box.dimensions.y = obj_ptr->width;
         box.dimensions.z = obj_ptr->height;
 
@@ -493,7 +493,7 @@ void SensorFusion::ProcessObjectBuilder(
         corners.row(corners.rows() - 1) = vec;
 
         Eigen::MatrixXf corners_on_image =
-            tools_.transformRectCamToImage(corners);
+            tools_->transformRectCamToImage(corners);
 
         kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
                                               &kitti_left_cam_img_);

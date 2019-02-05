@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle n;
     int node_loop_rate;
-    n.param<int>("execution_frequency", node_loop_rate, 10);
+    n.param<int>("execution_frequency", node_loop_rate, 50);
     ros::Rate loop_rate(node_loop_rate);
     KittiRosNode kitti_node;
 
@@ -130,7 +130,7 @@ void KittiRosNode::ObstacleDetectionandGridCellCostmap() {
     sensor_msgs::PointCloud2::ConstPtr cld_ptr(
         new sensor_msgs::PointCloud2(in_cloud));
 
-    grid_cell_costmap_.DetectObstacles(cld_ptr);
+    // grid_cell_costmap_.DetectObstacles(cld_ptr);
 }
 
 void KittiRosNode::ObstacleDetectionSegmentedPCL() {
@@ -141,5 +141,6 @@ void KittiRosNode::ObstacleDetectionSegmentedPCL() {
     sensor_msgs::PointCloud2::ConstPtr cld_ptr(
         new sensor_msgs::PointCloud2(in_cloud));
 
-    grid_cell_costmap_segmented_pcl_.DetectObstacles(cld_ptr, kitti_raw_image);
+    // grid_cell_costmap_segmented_pcl_.DetectObstacles(cld_ptr,
+    // kitti_raw_image);
 }
