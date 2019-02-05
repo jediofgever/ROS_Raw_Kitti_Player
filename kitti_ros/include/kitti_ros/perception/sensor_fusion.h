@@ -47,6 +47,9 @@ class SensorFusion {
 
     sensor_msgs::PointCloud2 GetSegmentedLidarScan();
 
+    void ProcessObjectBuilder(
+        pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder);
+
    private:
     float EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point);
     void PublishRawData();

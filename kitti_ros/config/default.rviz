@@ -3,7 +3,8 @@ Panels:
     Help Height: 75
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /BoundingBoxArray1
       Splitter Ratio: 0.5
     Tree Height: 653
   - Class: rviz/Selection
@@ -136,13 +137,13 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /detected_obstacles_from_local_costmap_segmented_pcl
       Name: MarkerArray
       Namespaces:
-        detected_obstacles: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -183,23 +184,7 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        back_camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        back_left_far_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        back_left_middle_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        back_right_far_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        back_right_middle_sonar_link:
+        base_footprint:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -207,80 +192,31 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        center_laser_link:
+          Value: true
+        steer_fl:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        chassis:
+        steer_fr:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        wheel_fl:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fl_axle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        fr_axle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_left_far_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_left_laser_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_left_middle_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_left_wheel:
+        wheel_fr:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        front_right_far_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_right_laser_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_right_middle_sonar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_right_wheel:
+        wheel_rl:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        rear_left_wheel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rear_right_wheel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        steering_wheel:
+        wheel_rr:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -291,6 +227,18 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: jsk_rviz_plugin/BoundingBoxArray
+      Enabled: true
+      Name: BoundingBoxArray
+      Topic: /jsk_box_array
+      Unreliable: false
+      Value: true
+      alpha: 0.800000012
+      color: 25; 255; 0
+      coloring: Auto
+      line width: 0.00499999989
+      only edge: false
+      show coords: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -316,25 +264,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 30.5321465
+      Distance: 26.8682899
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.374241263
-        Y: 2.23457909
-        Z: 7.21985435
+        X: 5.87119341
+        Y: 5.86231422
+        Z: 14.9958858
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.549797297
+      Pitch: 0.819797397
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.96306229
+      Yaw: 3.02306223
     Saved: ~
 Window Geometry:
   Displays:

@@ -45,7 +45,7 @@ SensorFusion::SensorFusion() {
 
     private_nh.param<std::string>(
         param_ns_prefix_ + "/non_ground_segmenter_type",
-        non_ground_segmenter_type, "RegionEuclideanSegmenter");
+        non_ground_segmenter_type, "EuclideanSegmenter");
 
     private_nh = ros::NodeHandle("~");
     SegmenterParams param =
@@ -405,6 +405,18 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     // apply filter
     outrem.filter(*rgb_out_cloud);
 
+    // prepare and publish RGB colored Lidar scan
+    sensor_msgs::PointCloud2 maskrcnn_cloud_msg;
+    pcl::toROSMsg(*rgb_out_cloud, maskrcnn_cloud_msg);
+    maskrcnn_cloud_msg.header = lidar_scan_.header;
+    segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
+
+    SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
+    SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder);
+}
+
+void SensorFusion::ProcessObjectBuilder(
+    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder) {
     std_msgs::Header header = lidar_scan_.header;
     header.frame_id = "camera_link";
     header.stamp = ros::Time::now();
@@ -448,26 +460,49 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
         box.pose.position.x = obj_ptr->ground_center[0];
         box.pose.position.y = obj_ptr->ground_center[1];
+        box.pose.position.z = obj_ptr->ground_center[2] + obj_ptr->length;
 
-        box.pose.position.z = obj_ptr->ground_center[2];
+        double yaw_rad = obj_ptr->yaw_rad;
+        double x, y, z, w;
+
+        kitti_ros_util::EulerAngleToQuaternion(yaw_rad, &x, &y, &z, &w);
+        box.pose.orientation.x = x;
+        box.pose.orientation.y = y;
+        box.pose.orientation.z = z;
+        box.pose.orientation.w = w;
+
+        std::vector<float> dimensions, position;
+
+        dimensions.push_back(obj_ptr->height);
+        dimensions.push_back(obj_ptr->width);
+        dimensions.push_back(obj_ptr->length);
+
+        position.push_back(obj_ptr->ground_center[0]);
+        position.push_back(obj_ptr->ground_center[1]);
+        position.push_back(obj_ptr->ground_center[2] + 2 * obj_ptr->length);
+
+        Eigen::MatrixXf corners;
+        corners = kitti_ros_util::KornersWorldtoKornersImage(dimensions,
+                                                             position, yaw_rad);
+
+        Eigen::RowVectorXf vec(8);
+        vec << 1, 1, 1, 1, 1, 1, 1, 1;
+
+        corners.conservativeResize(corners.rows() + 1, corners.cols());
+        corners.row(corners.rows() - 1) = vec;
+
+        Eigen::MatrixXf corners_on_image =
+            tools_.transformRectCamToImage(corners);
+
+        kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
+                                              &kitti_left_cam_img_);
+        cv::imwrite(
+            "/home/atas/kitti_data/2011_09_26/"
+            "2011_09_26_drive_0001_sync/box_img.png",
+            kitti_left_cam_img_);
+
         box_array.boxes.push_back(box);
     }
 
     jsk_box_array_pub_.publish(box_array);
-
-    double yaw_rad = 0.0;
-    // ground center of the object (cx, cy, z_min)
-    Eigen::Vector3d ground_center;
-    // size of the oriented bbox, length is the size in the main direction
-    double length = 0.0;
-    double width = 0.0;
-    double height = 0.0;
-
-    // prepare and publish RGB colored Lidar scan
-    sensor_msgs::PointCloud2 maskrcnn_cloud_msg;
-    pcl::toROSMsg(*rgb_out_cloud, maskrcnn_cloud_msg);
-    maskrcnn_cloud_msg.header = lidar_scan_.header;
-    segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
-
-    SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
 }

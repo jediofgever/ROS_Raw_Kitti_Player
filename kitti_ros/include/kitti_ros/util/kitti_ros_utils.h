@@ -3,6 +3,7 @@
 #include <visualization_msgs/Marker.h>
 #include <Eigen/Eigen>
 #include <cmath>
+#include <opencv/cv.hpp>
 
 namespace kitti_ros_util {
 
@@ -20,6 +21,12 @@ void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
                    double pz, double ox, double oy, double oz, double ow,
                    double sx, double sy, double sz, double r, double g,
                    double b, double a);
+
+Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
+                                           std::vector<float> positions,
+                                           float ry);
+
+void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image);
 
 };  // namespace kitti_ros_util
 
