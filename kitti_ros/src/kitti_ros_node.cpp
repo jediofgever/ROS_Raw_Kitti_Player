@@ -44,6 +44,8 @@ KittiRosNode::KittiRosNode() {
 
     sensor_fusion_.SetKITTIDataOperator(&kitti_data_operator_);
     sensor_fusion_.SetKittiObjectOperator(&kitti_object_operator_);
+    sensor_fusion_.SetTools(&tools_);
+    grid_cell_costmap_segmented_pcl_.SetTools(&tools_);
 
     sleep(1);
 }
@@ -97,6 +99,7 @@ void KittiRosNode::ProcessNode() {
                                                    training_image_name);*/
 
         // find Local costmap and Obstacles based on local costmap
+        //
         KittiRosNode::ObstacleDetectionandGridCellCostmap();
         KittiRosNode::ObstacleDetectionSegmentedPCL();
 
@@ -131,11 +134,12 @@ void KittiRosNode::ObstacleDetectionandGridCellCostmap() {
 }
 
 void KittiRosNode::ObstacleDetectionSegmentedPCL() {
+    const cv::Mat kitti_raw_image = kitti_data_operator_.GetCameraImage();
     sensor_msgs::PointCloud2 in_cloud = sensor_fusion_.GetSegmentedLidarScan();
     in_cloud.header.stamp = ros::Time::now();
     in_cloud.header.frame_id = "camera_link";
     sensor_msgs::PointCloud2::ConstPtr cld_ptr(
         new sensor_msgs::PointCloud2(in_cloud));
 
-    grid_cell_costmap_segmented_pcl_.DetectObstacles(cld_ptr);
+    grid_cell_costmap_segmented_pcl_.DetectObstacles(cld_ptr, kitti_raw_image);
 }

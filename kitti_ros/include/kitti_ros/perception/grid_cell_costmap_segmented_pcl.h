@@ -8,6 +8,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point32.h>
+#include <kitti_ros/kitti_object_operator.h>
 #include <kitti_ros/util/kitti_ros_utils.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
@@ -56,9 +57,14 @@ class GridCellCostmapSegmentedPCL {
     // Setter of costmap , utilized inside ProcessGridMap , after done process
     void SetUpdatedCostMap(bool value);
 
+    void SetTools(Tools* value);
+
+    const Tools* GetTools();
+
     // input: Costmap , nav_msgs/OccupancyGrid
     // input: Detected Obstacles published as , visuazlization_msgs/MarkerArray
-    void DetectObstacles(sensor_msgs::PointCloud2::ConstPtr& input_pointcloud);
+    void DetectObstacles(sensor_msgs::PointCloud2::ConstPtr& input_pointcloud,
+                         cv::Mat raw_kitti_image);
 
    private:
     // data is stored in nav_msgs/OccupancyGrid as 1D array, so we need to find
@@ -78,6 +84,8 @@ class GridCellCostmapSegmentedPCL {
     double map_update_rate_;
     int obstacle_value_;
     // END ######## Grid Cell Variables Declaration
+
+    Tools* tools_;
 
     // Grid Cell
     nav_msgs::OccupancyGrid obstacle_grid_;
@@ -102,4 +110,7 @@ class GridCellCostmapSegmentedPCL {
 
     // Publish Local Costmap(Occupancy Grid )
     ros::Publisher local_costmap_publisher_;
+
+    // Publish 3D BBX projected kitti image
+    ros::Publisher BBX_projected_kitti_image_pub_;
 };

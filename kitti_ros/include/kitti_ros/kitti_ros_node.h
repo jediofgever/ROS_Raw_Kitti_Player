@@ -39,6 +39,8 @@ class KittiRosNode {
 
     GridCellCostmapSegmentedPCL grid_cell_costmap_segmented_pcl_;
 
+    Tools tools_;
+
     std::string base_dir;
     std::string pcd_file_dir;
     std::string image_dir;

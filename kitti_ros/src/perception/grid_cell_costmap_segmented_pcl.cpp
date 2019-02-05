@@ -16,16 +16,16 @@ GridCellCostmapSegmentedPCL::GridCellCostmapSegmentedPCL() {
     nh_ = ros::NodeHandlePtr(new ros::NodeHandle());
 
     // Read Params from params.yaml file if avaliable
-    nh_->param<double>("costmap_width", grid_width_, 400.0);
-    nh_->param<double>("costmap_height", grid_height_, 400.0);
+    nh_->param<double>("costmap_width", grid_width_, 500.0);
+    nh_->param<double>("costmap_height", grid_height_, 500.0);
     nh_->param<double>("costmap_resolution", grid_resolution_, 0.1);
     nh_->param<double>("costmap_max_obstacle_height", max_obstacle_height_,
                        1.0);
     nh_->param<double>("costmap_min_obstacle_height", min_obstacle_height_,
                        -1.2);
     nh_->param<int>("costmap_obstacleValue", obstacle_value_, 99);
-    nh_->param<int>("costmap_dilate_radius", costmap_dilate_radius_, 3);
-    nh_->param<int>("costmap_smoothness_factor", costmap_smoothness_factor_, 1);
+    nh_->param<int>("costmap_dilate_radius", costmap_dilate_radius_, 1);
+    nh_->param<int>("costmap_smoothness_factor", costmap_smoothness_factor_, 3);
 
     // Prepare Occupancy Grid , setup size, resolution,obstacle_height
     InitLocalMapGrid();
@@ -41,6 +41,9 @@ GridCellCostmapSegmentedPCL::GridCellCostmapSegmentedPCL() {
     // combines with global map
     local_costmap_publisher_ = nh_->advertise<nav_msgs::OccupancyGrid>(
         "local_costmap_segmented_pcl", 1);
+
+    BBX_projected_kitti_image_pub_ =
+        nh_->advertise<sensor_msgs::Image>("BBX_projected_kitti_image", 1);
 }
 
 // Deconstruct  Costmap
@@ -80,6 +83,10 @@ const bool GridCellCostmapSegmentedPCL::GetUpdatedCostMap() {
 void GridCellCostmapSegmentedPCL::SetUpdatedCostMap(bool value) {
     updated_costmap_ = value;
 }
+
+void GridCellCostmapSegmentedPCL::SetTools(Tools* value) { tools_ = value; }
+
+const Tools* GridCellCostmapSegmentedPCL::GetTools() { return tools_; }
 
 // Costmap Parameter Initializer
 void GridCellCostmapSegmentedPCL::InitLocalMapGrid() {
@@ -170,13 +177,6 @@ void GridCellCostmapSegmentedPCL::ProcessGridMap(
             cv::Point(costmap_dilate_radius_, costmap_dilate_radius_));
 
         cv::dilate(image, image, element);
-
-        element = cv::getStructuringElement(
-            kDilationType,
-            cv::Size(4 * costmap_dilate_radius_ + 1,
-                     4 * costmap_dilate_radius_ + 1),
-            cv::Point(costmap_dilate_radius_, costmap_dilate_radius_));
-        // cv::erode(image, image, element);
     }
 
     if (costmap_smoothness_factor_ > 0) {
@@ -197,10 +197,11 @@ void GridCellCostmapSegmentedPCL::ProcessGridMap(
 // Finally Publish Obstacles as Marker Array
 ros::Time previous_time;
 void GridCellCostmapSegmentedPCL::DetectObstacles(
-    sensor_msgs::PointCloud2::ConstPtr& input_pointcloud) {
+    sensor_msgs::PointCloud2::ConstPtr& input_pointcloud,
+    cv::Mat raw_kitti_image) {
     int kMaxValue = 255;
     int kMinObstacleSize = 8;
-    int kMaxObstacleSize = 100;
+    int kMaxObstacleSize = 40;
 
     float kRad2Deg = 57.32;
     int kObstaclesThreshold = 99;
@@ -253,7 +254,7 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
                     float aux_x, aux_y;
 
                     aux_x = (minRect.center.x * info.resolution);
-                    //-(info.width * info.resolution / 2);
+                    //- (info.width * info.resolution / 2);
                     aux_y = (minRect.center.y * info.resolution) -
                             (info.height * info.resolution / 2);
 
@@ -333,13 +334,28 @@ void GridCellCostmapSegmentedPCL::DetectObstacles(
                     position.push_back(aux_y);
                     position.push_back(0);
 
-                    Eigen::MatrixXd corners;
-
+                    Eigen::MatrixXf corners;
                     corners = kitti_ros_util::ComputeCornersfromBBX(
                         dimensions, position, rotation_y);
+
+                    Eigen::RowVectorXf vec(8);
+                    vec << 1, 1, 1, 1, 1, 1, 1, 1;
+                    corners.conservativeResize(corners.rows() + 1,
+                                               corners.cols());
+                    corners.row(corners.rows() - 1) = vec;
+
+                    Eigen::MatrixXf corners_on_image =
+                        tools_->transformVeloToImage(corners);
+
                     kitti_ros_util::SetMarkerData(&visualization_marker_, 0, 0,
                                                   0, ox, oy, oz, ow, 0.1, 0, 0,
                                                   0, 0, 1, 1);
+                    kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
+                                                          &raw_kitti_image);
+                    cv::imwrite(
+                        "/home/atas/kitti_data/2011_09_26/"
+                        "2011_09_26_drive_0001_sync/box_img.png",
+                        raw_kitti_image);
 
                     for (int c = 0; c < 8; c++) {
                         geometry_msgs::Point korner_point, prev_korner_point;

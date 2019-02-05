@@ -52,26 +52,26 @@ Eigen::MatrixXd ComputeCorners(std::vector<float> dimensions,
     return corners;
 }
 
-Eigen::MatrixXd ComputeCornersfromBBX(std::vector<float> dimensions,
+Eigen::MatrixXf ComputeCornersfromBBX(std::vector<float> dimensions,
                                       std::vector<float> positions, float ry) {
     float h, w, l;
     h = dimensions[0];
     w = dimensions[1];
     l = dimensions[2];
 
-    Eigen::MatrixXd corners(3, 8);
-    Eigen::Matrix3d rot;
+    Eigen::MatrixXf corners(3, 8);
+    Eigen::Matrix3f rot;
 
     rot << +cos(ry), 0, +sin(ry), 0, 1, 0, -sin(ry), 0, +cos(ry);
 
-    Eigen::MatrixXd x(1, 8);
+    Eigen::MatrixXf x(1, 8);
     x << -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2;
 
-    Eigen::MatrixXd y(1, 8);
+    Eigen::MatrixXf y(1, 8);
     y << w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2;
 
-    Eigen::MatrixXd z(1, 8);
-    z << h, h, h, h, 0, 0, 0, 0;
+    Eigen::MatrixXf z(1, 8);
+    z << -h, -h, -h, -h, 0, 0, 0, 0;
 
     corners.row(0) = x;
     corners.row(1) = y;
@@ -108,6 +108,41 @@ void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
     marker->color.g = g;
     marker->color.b = b;
     marker->color.a = a;
+}
+
+void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image) {
+    cv::Scalar clr = cv::Scalar(0, 0, 255);
+    cv::Scalar clr_b = cv::Scalar(255, 0, 0);
+    cv::Scalar clr_ta = cv::Scalar(0, 255, 255);
+
+    // Declare cv Point to keep pixel coordinatres
+    // Declare image_points vector to keep image coordinates
+    // returned by CameraReproh->Project3Dpoint
+    std::vector<cv::Point> image_points;
+
+    for (int i = 0; i < corners->cols(); i++) {
+        cv::Point image_point;
+        image_point.x = (*corners)(0, i);
+        image_point.y = (*corners)(1, i);
+        image_points.push_back(image_point);
+    }
+
+    // Draw 12 lines that costructs box
+
+    if (image_points.size() > 7) {
+        cv::line(*image, image_points[0], image_points[1], clr_b, 2, 8);
+        cv::line(*image, image_points[0], image_points[3], clr, 2, 8);
+        cv::line(*image, image_points[0], image_points[4], clr_ta, 2, 8);
+        cv::line(*image, image_points[1], image_points[2], clr, 2, 8);
+        cv::line(*image, image_points[1], image_points[5], clr_ta, 2, 8);
+        cv::line(*image, image_points[2], image_points[6], clr_ta, 2, 8);
+        cv::line(*image, image_points[2], image_points[3], clr_b, 2, 8);
+        cv::line(*image, image_points[3], image_points[7], clr_ta, 2, 8);
+        cv::line(*image, image_points[7], image_points[4], clr, 2, 8);
+        cv::line(*image, image_points[7], image_points[6], clr_b, 2, 8);
+        cv::line(*image, image_points[4], image_points[5], clr_b, 2, 8);
+        cv::line(*image, image_points[5], image_points[6], clr, 2, 8);
+    }
 }
 
 };  // namespace kitti_ros_util

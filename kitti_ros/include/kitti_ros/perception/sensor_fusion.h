@@ -29,6 +29,10 @@ class SensorFusion {
 
     const KittiObjectOperator* GetKittiObjectOperator();
 
+    void SetTools(Tools* value);
+
+    const Tools* GetTools();
+
     void SegmentedPointCloudFromMaskRCNN(cv::Mat* maskrcnn_segmented_image);
 
     void SetSegmentedLidarScan(sensor_msgs::PointCloud2 value);
@@ -47,7 +51,8 @@ class SensorFusion {
 
     KITTIDataOperator* kitti_data_operator_;
     KittiObjectOperator* kitti_object_operator_;
-    Tools tools_;
+
+    Tools* tools_;
     sensor_msgs::PointCloud2 lidar_scan_;
     sensor_msgs::PointCloud2 segmented_lidar_scan_;
     cv::Mat kitti_left_cam_img_;
