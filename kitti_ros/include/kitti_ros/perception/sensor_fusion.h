@@ -1,6 +1,8 @@
 #ifndef sensorfusion_H
 #define sensorfusion_H
 
+#include <jsk_recognition_msgs/BoundingBox.h>
+#include <jsk_recognition_msgs/BoundingBoxArray.h>
 #include <kitti_ros/kitti_data_operator.h>
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
@@ -10,6 +12,8 @@
 #include <ros/ros.h>
 #include <object_builders/base_object_builder.hpp>
 #include <object_builders/object_builder_manager.hpp>
+
+using namespace autosense;
 
 class SensorFusion {
    public:
@@ -65,6 +69,8 @@ class SensorFusion {
     ros::Publisher kitti_image_pub_;
 
     ros::Publisher birdview_pointcloud_image_pub_;
+
+    ros::Publisher jsk_box_array_pub_;
 
     Eigen::MatrixXf TRANS_VELO_TO_CAM;
 };

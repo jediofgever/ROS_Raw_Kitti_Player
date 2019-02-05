@@ -26,6 +26,10 @@ SensorFusion::SensorFusion() {
     // publish birdview pointcloud Image
     birdview_pointcloud_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("image_from_colorful_PCL", 1);
+
+    // vis jsk Bounding box detected by object builder
+    jsk_box_array_pub_ = nh_->advertise<jsk_recognition_msgs::BoundingBoxArray>(
+        "jsk_box_array", 1);
 }
 
 SensorFusion::~SensorFusion() {}
@@ -302,8 +306,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud(
-        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder(
+        new pcl::PointCloud<pcl::PointXYZI>);
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
@@ -330,7 +334,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         if (point.x >= 0 && point.x <= 1242) {
             if (point.y >= 0 && point.y <= 375) {
                 pcl::PointXYZRGB colored_3d_point;
-                pcl::PointXYZ out_cloud_point;
+
+                pcl::PointXYZI out_cloud_point_obj_builder;
 
                 cv::Vec3b rgb_pixel =
                     maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
@@ -343,15 +348,16 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                 colored_3d_point.g = rgb_pixel[1];
                 colored_3d_point.b = rgb_pixel[0];
 
-                out_cloud_point.x = matrix_velodyne_points(0, m);
-                out_cloud_point.y = matrix_velodyne_points(1, m);
-                out_cloud_point.z = matrix_velodyne_points(2, m);
+                out_cloud_point_obj_builder.x = matrix_velodyne_points(0, m);
+                out_cloud_point_obj_builder.y = matrix_velodyne_points(1, m);
+                out_cloud_point_obj_builder.z = matrix_velodyne_points(2, m);
 
                 if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
                     rgb_pixel[0] != 255 && colored_3d_point.z > 0 &&
                     colored_3d_point.y < 1.6) {
                     rgb_out_cloud->points.push_back(colored_3d_point);
-                    out_cloud->points.push_back(out_cloud_point);
+                    out_cloud_obj_builder->points.push_back(
+                        out_cloud_point_obj_builder);
                 }
             }
         }
@@ -374,6 +380,47 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     outrem.setMinNeighborsInRadius(2);
     // apply filter
     outrem.filter(*rgb_out_cloud);
+
+    // 2.define object builder
+    boost::shared_ptr<object_builder::BaseObjectBuilder> object_builder_;
+
+    // 3.create object builder by manager
+    object_builder_ = object_builder::createObjectBuilder();
+
+    // 4.build 3D orientation bounding box for clustering point cloud
+    std::vector<PointICloudPtr> cloud_clusters;
+    cloud_clusters.push_back(out_cloud_obj_builder);
+    std::vector<autosense::ObjectPtr> objects;
+    std::cout << objects.size() << "objts found" << std::endl;
+    object_builder_->build(cloud_clusters, &objects);
+    std::cout << objects.size() << "objts found" << std::endl;
+
+    jsk_recognition_msgs::BoundingBoxArray box_array;
+    box_array.header.frame_id = "base_link";
+    for (int k = 0; k < objects.size(); k++) {
+        jsk_recognition_msgs::BoundingBox box;
+        box.header.frame_id = "base_link";
+        autosense::ObjectPtr obj_ptr = objects.at(k);
+        box.dimensions.x = obj_ptr->length;
+        box.dimensions.y = obj_ptr->width;
+        box.dimensions.z = obj_ptr->height;
+
+        box.pose.position.x = obj_ptr->ground_center[0];
+        box.pose.position.y = obj_ptr->ground_center[1];
+
+        box.pose.position.z = obj_ptr->ground_center[2];
+        box_array.boxes.push_back(box);
+    }
+
+    jsk_box_array_pub_.publish(box_array);
+
+    double yaw_rad = 0.0;
+    // ground center of the object (cx, cy, z_min)
+    Eigen::Vector3d ground_center;
+    // size of the oriented bbox, length is the size in the main direction
+    double length = 0.0;
+    double width = 0.0;
+    double height = 0.0;
 
     // prepare and publish RGB colored Lidar scan
     sensor_msgs::PointCloud2 maskrcnn_cloud_msg;

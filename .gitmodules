@@ -4,3 +4,6 @@
 [submodule "common_lib"]
 	path = common_lib
 	url = https://github.com/LidarPerception/common_lib
+[submodule "segmenters_lib"]
+	path = segmenters_lib
+	url = https://github.com/LidarPerception/segmenters_lib
