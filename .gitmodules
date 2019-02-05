@@ -1,0 +1,6 @@
+[submodule "object_builders_lib"]
+	path = object_builders_lib
+	url = https://github.com/jediofgever/object_builders_lib
+[submodule "common_lib"]
+	path = common_lib
+	url = https://github.com/jediofgever/common_lib
