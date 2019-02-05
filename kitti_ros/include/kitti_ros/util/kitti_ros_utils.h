@@ -25,6 +25,10 @@ void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
                    double sx, double sy, double sz, double r, double g,
                    double b, double a);
 
+Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
+                                           std::vector<float> positions,
+                                           float ry);
+
 void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image);
 
 };  // namespace kitti_ros_util

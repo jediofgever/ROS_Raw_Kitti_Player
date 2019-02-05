@@ -26,6 +26,34 @@ SensorFusion::SensorFusion() {
     // publish birdview pointcloud Image
     birdview_pointcloud_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("image_from_colorful_PCL", 1);
+
+    // vis jsk Bounding box detected by object builder
+    jsk_box_array_pub_ = nh_->advertise<jsk_recognition_msgs::BoundingBoxArray>(
+        "jsk_box_array", 1);
+
+    ground_pub_ = nh_->advertise<sensor_msgs::PointCloud2>("ground_cloud", 1);
+    nonground_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("nonground_cloud", 1);
+    clusters_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("cluster_cloud", 1);
+
+    const std::string param_ns_prefix_ = "/detect";
+    std::string ground_remover_type, non_ground_segmenter_type;
+    private_nh.param<std::string>(param_ns_prefix_ + "/ground_remover_type",
+                                  ground_remover_type,
+                                  "GroundPlaneFittingSegmenter");
+
+    private_nh.param<std::string>(
+        param_ns_prefix_ + "/non_ground_segmenter_type",
+        non_ground_segmenter_type, "EuclideanSegmenter");
+
+    private_nh = ros::NodeHandle("~");
+    SegmenterParams param =
+        common::getSegmenterParams(private_nh, param_ns_prefix_);
+    param.segmenter_type = ground_remover_type;
+    ground_remover_ = segmenter::createGroundSegmenter(param);
+    param.segmenter_type = non_ground_segmenter_type;
+    segmenter_ = segmenter::createNonGroundSegmenter(param);
 }
 
 SensorFusion::~SensorFusion() {}
@@ -306,8 +334,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud(
-        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder(
+        new pcl::PointCloud<pcl::PointXYZI>);
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
@@ -334,7 +362,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         if (point.x >= 0 && point.x <= 1242) {
             if (point.y >= 0 && point.y <= 375) {
                 pcl::PointXYZRGB colored_3d_point;
-                pcl::PointXYZ out_cloud_point;
+
+                pcl::PointXYZI out_cloud_point_obj_builder;
 
                 cv::Vec3b rgb_pixel =
                     maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
@@ -347,10 +376,16 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                 colored_3d_point.g = rgb_pixel[1];
                 colored_3d_point.b = rgb_pixel[0];
 
+                out_cloud_point_obj_builder.x = matrix_velodyne_points(0, m);
+                out_cloud_point_obj_builder.y = matrix_velodyne_points(1, m);
+                out_cloud_point_obj_builder.z = matrix_velodyne_points(2, m);
+
                 if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
                     rgb_pixel[0] != 255 && colored_3d_point.z > 0 &&
                     colored_3d_point.y < 1.65) {
                     rgb_out_cloud->points.push_back(colored_3d_point);
+                    out_cloud_obj_builder->points.push_back(
+                        out_cloud_point_obj_builder);
                 }
             }
         }
@@ -378,4 +413,97 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
 
     SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
+    SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder);
+}
+
+void SensorFusion::ProcessObjectBuilder(
+    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder) {
+    std_msgs::Header header = lidar_scan_.header;
+    header.frame_id = "camera_link";
+    header.stamp = ros::Time::now();
+
+    std::vector<PointICloudPtr> cloud_clusters;
+    PointICloudPtr cloud_ground(new PointICloud);
+    PointICloudPtr cloud_nonground(new PointICloud);
+
+    ground_remover_->segment(*out_cloud_obj_builder, &cloud_clusters);
+    *cloud_ground = *cloud_clusters[0];
+    *cloud_nonground = *cloud_clusters[1];
+
+    // reset clusters
+    cloud_clusters.clear();
+
+    segmenter_->segment(*out_cloud_obj_builder, &cloud_clusters);
+    common::publishClustersCloud<PointI>(clusters_pub_, header, cloud_clusters);
+
+    common::publishCloud<PointI>(ground_pub_, header, *cloud_ground);
+    common::publishCloud<PointI>(nonground_pub_, header, *cloud_nonground);
+
+    // 2.define object builder
+    boost::shared_ptr<object_builder::BaseObjectBuilder> object_builder_;
+
+    // 3.create object builder by manager
+    object_builder_ = object_builder::createObjectBuilder();
+
+    // 4.build 3D orientation bounding box for clustering point cloud
+    std::vector<autosense::ObjectPtr> objects;
+    object_builder_->build(cloud_clusters, &objects);
+
+    jsk_recognition_msgs::BoundingBoxArray box_array;
+    box_array.header.frame_id = "camera_link";
+    for (int k = 0; k < objects.size(); k++) {
+        jsk_recognition_msgs::BoundingBox box;
+        box.header.frame_id = "camera_link";
+        autosense::ObjectPtr obj_ptr = objects.at(k);
+        double sx, double sy, d box.dimensions.x = obj_ptr->length;
+        box.dimensions.y = obj_ptr->width;
+        box.dimensions.z = obj_ptr->height;
+
+        box.pose.position.x = obj_ptr->ground_center[0];
+        box.pose.position.y = obj_ptr->ground_center[1];
+        box.pose.position.z = obj_ptr->ground_center[2] + obj_ptr->length;
+
+        double yaw_rad = obj_ptr->yaw_rad;
+        double x, y, z, w;
+
+        kitti_ros_util::EulerAngleToQuaternion(yaw_rad, &x, &y, &z, &w);
+        box.pose.orientation.x = x;
+        box.pose.orientation.y = y;
+        box.pose.orientation.z = z;
+        box.pose.orientation.w = w;
+
+        std::vector<float> dimensions, position;
+
+        dimensions.push_back(obj_ptr->height);
+        dimensions.push_back(obj_ptr->width);
+        dimensions.push_back(obj_ptr->length);
+
+        position.push_back(obj_ptr->ground_center[0]);
+        position.push_back(obj_ptr->ground_center[1]);
+        position.push_back(obj_ptr->ground_center[2] + 2 * obj_ptr->length);
+
+        Eigen::MatrixXf corners;
+        corners = kitti_ros_util::KornersWorldtoKornersImage(dimensions,
+                                                             position, yaw_rad);
+
+        Eigen::RowVectorXf vec(8);
+        vec << 1, 1, 1, 1, 1, 1, 1, 1;
+
+        corners.conservativeResize(corners.rows() + 1, corners.cols());
+        corners.row(corners.rows() - 1) = vec;
+
+        Eigen::MatrixXf corners_on_image =
+            tools_.transformRectCamToImage(corners);
+
+        kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
+                                              &kitti_left_cam_img_);
+        cv::imwrite(
+            "/home/atas/kitti_data/2011_09_26/"
+            "2011_09_26_drive_0001_sync/box_img.png",
+            kitti_left_cam_img_);
+
+        box_array.boxes.push_back(box);
+    }
+
+    jsk_box_array_pub_.publish(box_array);
 }

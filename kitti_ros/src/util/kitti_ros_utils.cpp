@@ -110,6 +110,42 @@ void SetMarkerData(visualization_msgs::Marker *marker, double px, double py,
     marker->color.a = a;
 }
 
+Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
+                                           std::vector<float> positions,
+                                           float ry) {
+    float h, w, l;
+    h = dimensions[0];
+    w = dimensions[1];
+    l = dimensions[2];
+
+    Eigen::MatrixXf corners(3, 8);
+    Eigen::Matrix3f rot;
+
+    rot << +cos(ry), 0, +sin(ry), 0, 1, 0, -sin(ry), 0, +cos(ry);
+
+    Eigen::MatrixXf x(1, 8);
+    x << -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2;
+
+    Eigen::MatrixXf y(1, 8);
+    y << w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2;
+
+    Eigen::MatrixXf z(1, 8);
+    z << -h, -h, -h, -h, 0, 0, 0, 0;
+
+    corners.row(0) = x;
+    corners.row(1) = y;
+    corners.row(2) = z;
+
+    // corners = rot * corners;
+    // std::cout << x.size();
+    for (int k = 0; k < x.size(); k++) {
+        corners(0, k) += positions[0];
+        corners(1, k) += positions[1];
+        corners(2, k) += positions[2];
+    }
+    return corners;
+}
+
 void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image) {
     cv::Scalar clr = cv::Scalar(0, 0, 255);
     cv::Scalar clr_b = cv::Scalar(255, 0, 0);
