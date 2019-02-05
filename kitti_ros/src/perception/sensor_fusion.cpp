@@ -30,6 +30,30 @@ SensorFusion::SensorFusion() {
     // vis jsk Bounding box detected by object builder
     jsk_box_array_pub_ = nh_->advertise<jsk_recognition_msgs::BoundingBoxArray>(
         "jsk_box_array", 1);
+
+    ground_pub_ = nh_->advertise<sensor_msgs::PointCloud2>("ground_cloud", 1);
+    nonground_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("nonground_cloud", 1);
+    clusters_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("cluster_cloud", 1);
+
+    const std::string param_ns_prefix_ = "/detect";
+    std::string ground_remover_type, non_ground_segmenter_type;
+    private_nh.param<std::string>(param_ns_prefix_ + "/ground_remover_type",
+                                  ground_remover_type,
+                                  "GroundPlaneFittingSegmenter");
+
+    private_nh.param<std::string>(
+        param_ns_prefix_ + "/non_ground_segmenter_type",
+        non_ground_segmenter_type, "RegionEuclideanSegmenter");
+
+    private_nh = ros::NodeHandle("~");
+    SegmenterParams param =
+        common::getSegmenterParams(private_nh, param_ns_prefix_);
+    param.segmenter_type = ground_remover_type;
+    ground_remover_ = segmenter::createGroundSegmenter(param);
+    param.segmenter_type = non_ground_segmenter_type;
+    segmenter_ = segmenter::createNonGroundSegmenter(param);
 }
 
 SensorFusion::~SensorFusion() {}
@@ -381,6 +405,27 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     // apply filter
     outrem.filter(*rgb_out_cloud);
 
+    std_msgs::Header header = lidar_scan_.header;
+    header.frame_id = "camera_link";
+    header.stamp = ros::Time::now();
+
+    std::vector<PointICloudPtr> cloud_clusters;
+    PointICloudPtr cloud_ground(new PointICloud);
+    PointICloudPtr cloud_nonground(new PointICloud);
+
+    ground_remover_->segment(*out_cloud_obj_builder, &cloud_clusters);
+    *cloud_ground = *cloud_clusters[0];
+    *cloud_nonground = *cloud_clusters[1];
+
+    // reset clusters
+    cloud_clusters.clear();
+
+    segmenter_->segment(*out_cloud_obj_builder, &cloud_clusters);
+    common::publishClustersCloud<PointI>(clusters_pub_, header, cloud_clusters);
+
+    common::publishCloud<PointI>(ground_pub_, header, *cloud_ground);
+    common::publishCloud<PointI>(nonground_pub_, header, *cloud_nonground);
+
     // 2.define object builder
     boost::shared_ptr<object_builder::BaseObjectBuilder> object_builder_;
 
@@ -388,18 +433,14 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     object_builder_ = object_builder::createObjectBuilder();
 
     // 4.build 3D orientation bounding box for clustering point cloud
-    std::vector<PointICloudPtr> cloud_clusters;
-    cloud_clusters.push_back(out_cloud_obj_builder);
     std::vector<autosense::ObjectPtr> objects;
-    std::cout << objects.size() << "objts found" << std::endl;
     object_builder_->build(cloud_clusters, &objects);
-    std::cout << objects.size() << "objts found" << std::endl;
 
     jsk_recognition_msgs::BoundingBoxArray box_array;
-    box_array.header.frame_id = "base_link";
+    box_array.header.frame_id = "camera_link";
     for (int k = 0; k < objects.size(); k++) {
         jsk_recognition_msgs::BoundingBox box;
-        box.header.frame_id = "base_link";
+        box.header.frame_id = "camera_link";
         autosense::ObjectPtr obj_ptr = objects.at(k);
         box.dimensions.x = obj_ptr->length;
         box.dimensions.y = obj_ptr->width;

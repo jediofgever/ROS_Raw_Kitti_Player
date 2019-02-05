@@ -57,7 +57,14 @@ src/kitti_object_operator.cpp
 src/util/kitti_ros_utils.cpp
 src/perception/sensor_fusion.cpp
 src/perception/grid_cell_costmap.cpp
-src/perception/grid_cell_costmap_segmented_pcl.cpp)
+src/perception/grid_cell_costmap_segmented_pcl.cpp
+src/segmenters_lib/ground_plane_fitting_segmenter.cpp
+src/segmenters_lib/ground_ransac_segmenter.cpp
+src/segmenters_lib/euclidean_segmenter.cpp
+src/segmenters_lib/region_euclidean_segmenter.cpp
+src/segmenters_lib/region_growing_segmenter.cpp
+src/segmenters_lib/don_segmenter.cpp)
+
 target_link_libraries (kitti_ros_node ${PCL_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Eigen3_LIBRARIES} 
     )
 

@@ -10,8 +10,14 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <ros/ros.h>
+#include <kitti_ros/segmenters_lib/segmenter_manager.hpp>
 #include <object_builders/base_object_builder.hpp>
 #include <object_builders/object_builder_manager.hpp>
+
+#include "common/parameter.hpp" /* common::getSegmenterParams */
+#include "common/publisher.hpp"
+#include "common/time.hpp"     /* common::Clock */
+#include "common/types/type.h" /* PointICloudPtr */
 
 using namespace autosense;
 
@@ -50,6 +56,7 @@ class SensorFusion {
         std::string image_file);
 
     ros::NodeHandlePtr nh_;
+    ros::NodeHandle private_nh;
 
     KITTIDataOperator* kitti_data_operator_;
     KittiObjectOperator* kitti_object_operator_;
@@ -57,6 +64,15 @@ class SensorFusion {
     sensor_msgs::PointCloud2 lidar_scan_;
     sensor_msgs::PointCloud2 segmented_lidar_scan_;
     cv::Mat kitti_left_cam_img_;
+
+    boost::shared_ptr<segmenter::BaseSegmenter> ground_remover_;
+    boost::shared_ptr<segmenter::BaseSegmenter> segmenter_;
+    std::string frame_id_;
+    // ROS Subscriber
+    // ROS Publisher
+    ros::Publisher ground_pub_;
+    ros::Publisher nonground_pub_;
+    ros::Publisher clusters_pub_;
 
     ros::Publisher rgb_pointcloud_pub_;
 

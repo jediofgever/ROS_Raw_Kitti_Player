@@ -10,6 +10,14 @@
   <param name="execution_frequency" type="int" value="1" />
   <param name="number_of_pcd_files" type="int" value="108" />
 
+
+      <!-- ROS parameters -->
+    <!--Point Cloud segmenter-->
+    <rosparam command="load" file="$(find kitti_ros)/config/kitti/segmenter.yaml"/>
+    <!--Detector-->
+    <rosparam command="load" file="$(find kitti_ros)/config/kitti/detection.yaml"/>
+
+
   <!-- Run the visualization node -->
   <node pkg="kitti_ros" type="kitti_ros_node" name="kitti_ros_node" output="screen">
 
