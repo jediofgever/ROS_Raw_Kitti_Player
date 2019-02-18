@@ -31,6 +31,8 @@ Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
 
 void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image);
 
+std::vector<geometry_msgs::Point> Eigen2GeometryMsgs(Eigen::MatrixXf corners);
+
 };  // namespace kitti_ros_util
 
 #endif

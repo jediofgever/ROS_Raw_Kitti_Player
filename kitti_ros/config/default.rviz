@@ -3,13 +3,9 @@ Panels:
     Help Height: 75
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /PointCloud21
-        - /PointCloud22
-        - /PointCloud23
-        - /BoundingBoxArray1
+      Expanded: ~
       Splitter Ratio: 0.5
-    Tree Height: 653
+    Tree Height: 414
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -60,7 +56,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -73,9 +69,9 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.200000003
+      Size (m): 0.150000006
       Style: Flat Squares
-      Topic: /segmented_pointcloud_from_maskrcnn
+      Topic: /kitti_rgb_pointcloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -103,7 +99,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.100000001
+      Size (m): 0.0500000007
       Style: Flat Squares
       Topic: /kitti_raw_pointcloud
       Unreliable: false
@@ -117,34 +113,12 @@ Visualization Manager:
       Radius: 0.100000001
       Reference Frame: velodyne_link
       Value: false
-    - Class: rviz/Image
-      Enabled: true
-      Image Topic: /kitti_raw_image
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: true
-    - Alpha: 0.699999988
-      Class: rviz/Map
-      Color Scheme: raw
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /local_costmap_segmented_pcl
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /detected_obstacles_from_local_costmap_segmented_pcl
       Name: MarkerArray
       Namespaces:
-        {}
+        DetectionBox: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -230,68 +204,27 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Class: jsk_rviz_plugin/BoundingBoxArray
-      Enabled: false
-      Name: BoundingBoxArray
-      Topic: /jsk_box_array
-      Unreliable: false
-      Value: false
-      alpha: 0.800000012
-      color: 25; 255; 0
-      coloring: Auto
-      line width: 0.00499999989
-      only edge: false
-      show coords: false
-    - Class: rviz/TF
+    - Class: rviz/Image
       Enabled: true
-      Frame Timeout: 15
-      Frames:
-        All Enabled: true
-        base_footprint:
-          Value: true
-        base_link:
-          Value: true
-        camera_link:
-          Value: true
-        map:
-          Value: true
-        steer_fl:
-          Value: true
-        steer_fr:
-          Value: true
-        velodyne_link:
-          Value: true
-        wheel_fl:
-          Value: true
-        wheel_fr:
-          Value: true
-        wheel_rl:
-          Value: true
-        wheel_rr:
-          Value: true
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        map:
-          base_link:
-            camera_link:
-              {}
-            steer_fl:
-              wheel_fl:
-                {}
-            steer_fr:
-              wheel_fr:
-                {}
-            velodyne_link:
-              {}
-            wheel_rl:
-              {}
-            wheel_rr:
-              {}
-      Update Interval: 0
+      Image Topic: /box_projetcted_image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /local_costmap
+      Unreliable: false
+      Use Timestamp: false
       Value: true
   Enabled: true
   Global Options:
@@ -318,35 +251,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 30.0110741
+      Distance: 16.0257263
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.72365856
-        Y: 0.884014487
-        Z: 7.14685297
+        X: 2.31815839
+        Y: -1.15231264
+        Z: 2.57014346
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -0.0152024059
+      Pitch: 0.114797406
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.99306321
+      Yaw: 2.91805291
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
   Height: 1056
   Hide Left Dock: false
-  Hide Right Dock: false
+  Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000021a00000396fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002800000319000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650100000347000000770000001600fffffffb0000000a0049006d006100670065010000028d000001310000000000000000fb0000000a0049006d00610067006500000002d4000000ea0000000000000000000000010000010f00000396fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000002800000396000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d006501000000000000045000000000000000000000040a0000039600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000034f00000396fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000280000022a000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650100000258000001660000001600fffffffb0000000a0049006d00610067006501000002820000013c0000000000000000fb0000000a0049006d00610067006500000002d4000000ea0000000000000000fb0000000a0049006d006100670065010000026e000001500000000000000000000000010000010f00000396fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000396000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003ea0000039600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -354,7 +287,7 @@ Window Geometry:
   Tool Properties:
     collapsed: false
   Views:
-    collapsed: false
+    collapsed: true
   Width: 1855
   X: 65
   Y: 24

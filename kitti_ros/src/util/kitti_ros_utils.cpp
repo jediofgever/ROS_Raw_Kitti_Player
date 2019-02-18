@@ -181,4 +181,17 @@ void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image) {
     }
 }
 
+std::vector<geometry_msgs::Point> Eigen2GeometryMsgs(Eigen::MatrixXf corners) {
+    std::vector<geometry_msgs::Point> corners_geometry_msgs;
+    for (int i = 0; i < corners.cols(); i++) {
+        geometry_msgs::Point korner_point;
+
+        korner_point.x = corners(0, i);
+        korner_point.y = corners(1, i);
+        korner_point.z = corners(2, i);
+        corners_geometry_msgs.push_back(korner_point);
+    }
+    return corners_geometry_msgs;
+}
+
 };  // namespace kitti_ros_util

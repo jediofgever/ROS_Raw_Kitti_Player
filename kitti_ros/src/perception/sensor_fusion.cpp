@@ -36,6 +36,10 @@ SensorFusion::SensorFusion() {
         nh_->advertise<visualization_msgs::MarkerArray>(
             "detected_obstacles_from_local_costmap_segmented_pcl", 1);
 
+    // Publish 3D boundging box projected Image
+    box_projetcted_image_pub_ =
+        nh_->advertise<sensor_msgs::Image>("box_projetcted_image", 1);
+
     // Publishers for segmenters lib
     ground_pub_ = nh_->advertise<sensor_msgs::PointCloud2>("ground_cloud", 1);
     nonground_pub_ =
@@ -383,6 +387,14 @@ void SensorFusion::ProcessObjectBuilder(
 
             cv::imwrite(image_file_path, kitti_left_cam_img_);
 
+            // Prepare and publish 3D box projected image
+            cv_bridge::CvImage cv_kitti_3D_BOX_image;
+            cv_kitti_3D_BOX_image.image = kitti_left_cam_img_;
+            cv_kitti_3D_BOX_image.encoding = "bgr8";
+            cv_kitti_3D_BOX_image.header.stamp = ros::Time::now();
+            box_projetcted_image_pub_.publish(
+                cv_kitti_3D_BOX_image.toImageMsg());
+
             box_array.boxes.push_back(box);
 
             visualization_msgs::Marker visualization_marker_;
@@ -398,20 +410,35 @@ void SensorFusion::ProcessObjectBuilder(
             kitti_ros_util::SetMarkerData(&visualization_marker_, 0, 0, 0, x, y,
                                           z, w, 0.1, 0, 0, 0, 0, 1, 1);
 
-            for (int c = 0; c < 4; c++) {
-                geometry_msgs::Point korner_point;
-                korner_point.x = corners(0, c);
-                korner_point.y = corners(1, c);
-                korner_point.z = corners(2, c);
-                visualization_marker_.points.push_back(korner_point);
-            }
-            for (int c = 4; c < 8; c++) {
-                geometry_msgs::Point korner_point;
-                korner_point.x = corners(0, c);
-                korner_point.y = corners(1, c);
-                korner_point.z = corners(2, c);
-                visualization_marker_.points.push_back(korner_point);
-            }
+            std::vector<geometry_msgs::Point> corners_geometry_msgs =
+                kitti_ros_util::Eigen2GeometryMsgs(corners);
+            // Construct 3D box with entering point in a sequence
+            // yeah I know it looks ugly
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(0));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(1));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(0));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(3));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(0));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(4));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(1));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(2));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(1));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(5));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(1));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(2));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(6));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(2));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(3));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(3));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(7));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(7));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(4));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(7));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(6));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(4));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(5));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(5));
+            visualization_marker_.points.push_back(corners_geometry_msgs.at(6));
 
             Dbox_array.markers.push_back(visualization_marker_);
         }

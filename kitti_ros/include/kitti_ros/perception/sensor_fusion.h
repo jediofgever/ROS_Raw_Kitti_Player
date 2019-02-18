@@ -101,6 +101,8 @@ class SensorFusion {
 
     ros::Publisher jsk_box_array_pub_;
 
+    ros::Publisher box_projetcted_image_pub_;
+
     Eigen::MatrixXf TRANS_VELO_TO_CAM;
 };
 #endif
