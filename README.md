@@ -2,6 +2,12 @@
 
 Ros Package to access  manipulate and process Raw KITTI dataset. In this Project there is sensor fusion, and some other perception is done. Once it is complete I will release project Manual. In current phase , once you execute this Project you should see something similiar to below picture.
 
+Latest Commit; 
+
+![](resources/ros_raw_kitti_1.png)
+
+
+Initial Version 
 
 ![](resources/ros_raw_kitti.png)
 
