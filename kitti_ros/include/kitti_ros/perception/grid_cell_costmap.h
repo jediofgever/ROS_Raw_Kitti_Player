@@ -58,10 +58,6 @@ class GridCellCostmap {
     // Setter of costmap , utilized inside ProcessGridMap , after done process
     void SetUpdatedCostMap(bool value);
 
-    // input: Costmap , nav_msgs/OccupancyGrid
-    // input: Detected Obstacles published as , visuazlization_msgs/MarkerArray
-    void DetectObstacles(sensor_msgs::PointCloud2::ConstPtr& input_pointcloud);
-
    private:
     // data is stored in nav_msgs/OccupancyGrid as 1D array, so we need to find
     // index of occupied cell in this 1D array and modify the value

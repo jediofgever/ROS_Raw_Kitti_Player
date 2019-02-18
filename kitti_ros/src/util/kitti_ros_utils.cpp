@@ -77,7 +77,7 @@ Eigen::MatrixXf ComputeCornersfromBBX(std::vector<float> dimensions,
     corners.row(1) = y;
     corners.row(2) = z;
 
-    corners = rot * corners;
+    // corners = rot * corners;
     // std::cout << x.size();
     for (int k = 0; k < x.size(); k++) {
         corners(0, k) += positions[0];

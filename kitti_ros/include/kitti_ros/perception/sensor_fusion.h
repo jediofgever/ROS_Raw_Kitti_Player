@@ -45,18 +45,21 @@ class SensorFusion {
 
     const Tools* GetTools();
 
-    void SegmentedPointCloudFromMaskRCNN(cv::Mat* maskrcnn_segmented_image);
+    void SegmentedPointCloudFromMaskRCNN(cv::Mat* maskrcnn_segmented_image,
+                                         std::string image_file_path);
 
     void SetSegmentedLidarScan(sensor_msgs::PointCloud2 value);
 
     sensor_msgs::PointCloud2 GetSegmentedLidarScan();
 
     void ProcessObjectBuilder(
-        pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder,
+        std::string image_file_path, cv::Mat* maskrcnn_segmented_image);
+
+    void PublishRawData();
 
    private:
     float EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point);
-    void PublishRawData();
 
     void CreateBirdviewPointcloudImage(
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud,
@@ -81,6 +84,8 @@ class SensorFusion {
     ros::Publisher ground_pub_;
     ros::Publisher nonground_pub_;
     ros::Publisher clusters_pub_;
+
+    ros::Publisher detected_obstacles_publisher_;
 
     ros::Publisher rgb_pointcloud_pub_;
 

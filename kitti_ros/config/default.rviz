@@ -4,6 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /PointCloud21
+        - /PointCloud22
+        - /PointCloud23
         - /BoundingBoxArray1
       Splitter Ratio: 0.5
     Tree Height: 653
@@ -54,12 +57,12 @@ Visualization Manager:
         Min Value: -4.1072607
         Value: true
       Axis: Y
-      Channel Name: y
+      Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: ""
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 10
@@ -70,13 +73,13 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.0500000007
+      Size (m): 0.200000003
       Style: Flat Squares
-      Topic: /kitti_raw_pointcloud
+      Topic: /segmented_pointcloud_from_maskrcnn
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -87,7 +90,7 @@ Visualization Manager:
       Channel Name: y
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: RGB8
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -100,20 +103,20 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.0500000007
+      Size (m): 0.100000001
       Style: Flat Squares
-      Topic: /kitti_rgb_pointcloud
+      Topic: /kitti_raw_pointcloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
     - Class: rviz/Axes
-      Enabled: true
+      Enabled: false
       Length: 1
       Name: Axes
       Radius: 0.100000001
       Reference Frame: velodyne_link
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /kitti_raw_image
@@ -137,13 +140,13 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /detected_obstacles_from_local_costmap_segmented_pcl
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -154,7 +157,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: RGB8
+      Color Transformer: ""
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -167,9 +170,9 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.200000003
+      Size (m): 0.0199999996
       Style: Flat Squares
-      Topic: /segmented_pointcloud_from_maskrcnn
+      Topic: /ground_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -228,17 +231,68 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: jsk_rviz_plugin/BoundingBoxArray
-      Enabled: true
+      Enabled: false
       Name: BoundingBoxArray
       Topic: /jsk_box_array
       Unreliable: false
-      Value: true
+      Value: false
       alpha: 0.800000012
       color: 25; 255; 0
       coloring: Auto
       line width: 0.00499999989
       only edge: false
       show coords: false
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        camera_link:
+          Value: true
+        map:
+          Value: true
+        steer_fl:
+          Value: true
+        steer_fr:
+          Value: true
+        velodyne_link:
+          Value: true
+        wheel_fl:
+          Value: true
+        wheel_fr:
+          Value: true
+        wheel_rl:
+          Value: true
+        wheel_rr:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          base_link:
+            camera_link:
+              {}
+            steer_fl:
+              wheel_fl:
+                {}
+            steer_fr:
+              wheel_fr:
+                {}
+            velodyne_link:
+              {}
+            wheel_rl:
+              {}
+            wheel_rr:
+              {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -264,25 +318,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 26.8682899
+      Distance: 30.0110741
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.87119341
-        Y: 5.86231422
-        Z: 14.9958858
+        X: 2.72365856
+        Y: 0.884014487
+        Z: 7.14685297
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.819797397
+      Pitch: -0.0152024059
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.02306223
+      Yaw: 2.99306321
     Saved: ~
 Window Geometry:
   Displays:

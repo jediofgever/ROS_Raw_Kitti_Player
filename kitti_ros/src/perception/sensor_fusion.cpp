@@ -31,12 +31,19 @@ SensorFusion::SensorFusion() {
     jsk_box_array_pub_ = nh_->advertise<jsk_recognition_msgs::BoundingBoxArray>(
         "jsk_box_array", 1);
 
+    // Publish Deteceted Obstacles
+    detected_obstacles_publisher_ =
+        nh_->advertise<visualization_msgs::MarkerArray>(
+            "detected_obstacles_from_local_costmap_segmented_pcl", 1);
+
+    // Publishers for segmenters lib
     ground_pub_ = nh_->advertise<sensor_msgs::PointCloud2>("ground_cloud", 1);
     nonground_pub_ =
         nh_->advertise<sensor_msgs::PointCloud2>("nonground_cloud", 1);
     clusters_pub_ =
         nh_->advertise<sensor_msgs::PointCloud2>("cluster_cloud", 1);
 
+    // paths to segmenters lib configs
     const std::string param_ns_prefix_ = "/detect";
     std::string ground_remover_type, non_ground_segmenter_type;
     private_nh.param<std::string>(param_ns_prefix_ + "/ground_remover_type",
@@ -156,14 +163,8 @@ void SensorFusion::ProcessFusion(std::string training_image_name) {
     // pixel
     rgb_out_cloud->width = 1;
     rgb_out_cloud->height = rgb_out_cloud->points.size();
-    SensorFusion::CreateBirdviewPointcloudImage(rgb_out_cloud,
-                                                training_image_name);
-
-    // Publish raw point cloud and raw rgb image
-    SensorFusion::PublishRawData();
 
     // prepare and publish RGB colored Lidar scan
-
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*rgb_out_cloud, cloud_msg);
     cloud_msg.header = lidar_scan_.header;
@@ -197,138 +198,8 @@ float SensorFusion::EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point) {
     return distance;
 }
 
-void SensorFusion::CreateBirdviewPointcloudImage(
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud, std::string image_file) {
-    cv::Mat bird_view_image(1200, 1200, CV_8UC3);
-    bird_view_image.setTo(cv::Scalar(255, 255, 255));
-
-    for (int r = 0; r < out_cloud->points.size(); r++) {
-        pcl::PointXYZRGB rgb_point = out_cloud->points[r];
-
-        if (rgb_point.z < 60 && rgb_point.x > -30 && rgb_point.x < 30) {
-            cv::Point point;
-
-            rgb_point.z -= 60;
-            rgb_point.x += 30;
-
-            point.x = rgb_point.x * 20;
-            point.y = -rgb_point.z * 20;
-
-            cv::Vec3b rgb_pixel, dense;
-
-            rgb_pixel[2] = rgb_point.r;
-            rgb_pixel[1] = rgb_point.g;
-            rgb_pixel[0] = rgb_point.b;
-
-            dense[2] = 255;
-            dense[1] = 0;
-            dense[0] = 0;
-
-            if (point.x > 0 && point.x < 1200) {
-                if (point.y > 0 && point.y < 1200) {
-                    bird_view_image.at<cv::Vec3b>(point.y, point.x) = rgb_pixel;
-                }
-            }
-        }
-    }
-
-    // Prepare and publish colorful image from PCL
-    cv_bridge::CvImage cv_colorful_image_from_PCL;
-    cv_colorful_image_from_PCL.image = bird_view_image;
-    cv_colorful_image_from_PCL.encoding = "bgr8";
-    cv_colorful_image_from_PCL.header.stamp = ros::Time::now();
-    birdview_pointcloud_image_pub_.publish(
-        cv_colorful_image_from_PCL.toImageMsg());
-
-    cv::imwrite(image_file, bird_view_image);
-
-    // pcl::io::savePCDFileASCII("test_pcd.pcd", *out_cloud);
-}
-
-void SensorFusion::ProcessLabelofBEVImage(std::string& label_infile_string,
-                                          std::string image_file_path) {
-    std::ifstream label_infile(label_infile_string.c_str());
-
-    KittiObjectOperator::KittiObjectsThisFrame kitti_objects =
-        kitti_object_operator_->GetAllKittiObjectsFrame(label_infile);
-
-    cv::Mat BEV_image = cv::imread(image_file_path, cv::IMREAD_COLOR);
-
-    for (int k = 0; k < kitti_objects.size(); k++) {
-        if (kitti_objects[k].type == "Car") {
-            std::vector<float> dimensions, position;
-
-            dimensions =
-                kitti_object_operator_->dimensionsVector(kitti_objects[k]);
-            position = kitti_object_operator_->positionVector(kitti_objects[k]);
-
-            Eigen::MatrixXd corners(3, 8);
-
-            std::cout << "KORNER FROM LABEL " << corners << std::endl;
-
-            corners = kitti_ros_util::ComputeCorners(
-                dimensions, position, kitti_objects[k].rotation_y);
-
-            cv::Point pt1_on2D, pt2_on2D, pt3_on2D, pt4_on2D, center;
-
-            pt1_on2D.x = corners(0, 0);
-            pt1_on2D.y = corners(2, 0);
-
-            pt2_on2D.x = corners(0, 1);
-            pt2_on2D.y = corners(2, 1);
-
-            pt3_on2D.x = corners(0, 2);
-            pt3_on2D.y = corners(2, 2);
-
-            pt4_on2D.x = corners(0, 3);
-            pt4_on2D.y = corners(2, 3);
-
-            pt1_on2D.x += 30;
-            pt1_on2D.y -= 60;
-
-            pt2_on2D.x += 30;
-            pt2_on2D.y -= 60;
-
-            pt3_on2D.x += 30;
-            pt3_on2D.y -= 60;
-
-            pt4_on2D.x += 30;
-            pt4_on2D.y -= 60;
-
-            // scale up to image dimensions 1200 x 900
-
-            pt1_on2D.x *= 20;
-            pt2_on2D.x *= 20;
-            pt3_on2D.x *= 20;
-            pt4_on2D.x *= 20;
-
-            pt1_on2D.y *= -20;
-            pt2_on2D.y *= -20;
-            pt3_on2D.y *= -20;
-            pt4_on2D.y *= -20;
-
-            center.x = position[0];
-            center.y = position[2];
-            center.x += 30;
-            center.y -= 60;
-            center.x *= 20;
-            center.y *= -20;
-
-            // cv::rectangle(frame, rect_on2D, c, 2, 2, 0);
-            cv::Scalar clr = cv::Scalar(0, 0, 255);
-
-            cv::circle(BEV_image, center, 4, clr, 1, 1, 0);
-            cv::line(BEV_image, pt1_on2D, pt2_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt2_on2D, pt3_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt3_on2D, pt4_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt4_on2D, pt1_on2D, clr, 1, 8);
-        }
-    }
-    cv::imwrite(image_file_path, BEV_image);
-}
-
 void SensorFusion::SegmentedPointCloudFromMaskRCNN(
-    cv::Mat* maskrcnn_segmented_image) {
+    cv::Mat* maskrcnn_segmented_image, std::string image_file_path) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
         new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
@@ -348,6 +219,12 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         matrix_velodyne_points(2, i) = in_cloud->points[i].z;
         matrix_velodyne_points(3, i) = 1;
     }
+    int kDilationType = cv::MORPH_RECT;
+
+    cv::Mat element = cv::getStructuringElement(
+        kDilationType, cv::Size(2 * 7 + 1, 2 * 7 + 1), cv::Point(7, 7));
+
+    cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points);
@@ -413,11 +290,13 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
 
     SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
-    SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder);
+    SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder, image_file_path,
+                                       maskrcnn_segmented_image);
 }
 
 void SensorFusion::ProcessObjectBuilder(
-    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder) {
+    pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder,
+    std::string image_file_path, cv::Mat* maskrcnn_segmented_image) {
     std_msgs::Header header = lidar_scan_.header;
     header.frame_id = "camera_link";
     header.stamp = ros::Time::now();
@@ -451,59 +330,93 @@ void SensorFusion::ProcessObjectBuilder(
 
     jsk_recognition_msgs::BoundingBoxArray box_array;
     box_array.header.frame_id = "camera_link";
+    visualization_msgs::MarkerArray Dbox_array;
+
     for (int k = 0; k < objects.size(); k++) {
         jsk_recognition_msgs::BoundingBox box;
         box.header.frame_id = "camera_link";
         autosense::ObjectPtr obj_ptr = objects.at(k);
-        box.dimensions.x = obj_ptr->length;
-        box.dimensions.y = obj_ptr->width;
-        box.dimensions.z = obj_ptr->height;
 
-        box.pose.position.x = obj_ptr->ground_center[0];
-        box.pose.position.y = obj_ptr->ground_center[1];
-        box.pose.position.z = obj_ptr->ground_center[2] + obj_ptr->length;
+        if (obj_ptr->height < 22.5) {
+            box.dimensions.x = obj_ptr->length;
+            box.dimensions.y = obj_ptr->width;
+            box.dimensions.z = 2.0;  // obj_ptr->height;
 
-        double yaw_rad = obj_ptr->yaw_rad;
-        double x, y, z, w;
+            box.pose.position.x = obj_ptr->ground_center[0];
+            box.pose.position.y = obj_ptr->ground_center[1];
+            box.pose.position.z = obj_ptr->ground_center[2] + obj_ptr->length;
 
-        kitti_ros_util::EulerAngleToQuaternion(yaw_rad, &x, &y, &z, &w);
-        box.pose.orientation.x = x;
-        box.pose.orientation.y = y;
-        box.pose.orientation.z = z;
-        box.pose.orientation.w = w;
+            double yaw_rad = obj_ptr->yaw_rad;
+            double x, y, z, w;
 
-        std::vector<float> dimensions, position;
+            kitti_ros_util::EulerAngleToQuaternion(yaw_rad, &x, &y, &z, &w);
+            box.pose.orientation.x = x;
+            box.pose.orientation.y = y;
+            box.pose.orientation.z = z;
+            box.pose.orientation.w = w;
 
-        dimensions.push_back(obj_ptr->height);
-        dimensions.push_back(obj_ptr->width);
-        dimensions.push_back(obj_ptr->length);
+            std::vector<float> dimensions, position;
 
-        position.push_back(obj_ptr->ground_center[0]);
-        position.push_back(obj_ptr->ground_center[1]);
-        position.push_back(obj_ptr->ground_center[2] + 2 * obj_ptr->length);
+            dimensions.push_back(obj_ptr->height);
+            dimensions.push_back(1.6);
+            dimensions.push_back(obj_ptr->length);
 
-        Eigen::MatrixXf corners;
-        corners = kitti_ros_util::KornersWorldtoKornersImage(dimensions,
-                                                             position, yaw_rad);
+            position.push_back(obj_ptr->ground_center[0]);
+            position.push_back(obj_ptr->ground_center[1]);
+            position.push_back(obj_ptr->ground_center[2] + obj_ptr->height);
 
-        Eigen::RowVectorXf vec(8);
-        vec << 1, 1, 1, 1, 1, 1, 1, 1;
+            Eigen::MatrixXf corners;
+            corners = kitti_ros_util::KornersWorldtoKornersImage(
+                dimensions, position, yaw_rad);
 
-        corners.conservativeResize(corners.rows() + 1, corners.cols());
-        corners.row(corners.rows() - 1) = vec;
+            Eigen::RowVectorXf vec(8);
+            vec << 1, 1, 1, 1, 1, 1, 1, 1;
 
-        Eigen::MatrixXf corners_on_image =
-            tools_->transformRectCamToImage(corners);
+            corners.conservativeResize(corners.rows() + 1, corners.cols());
+            corners.row(corners.rows() - 1) = vec;
 
-        kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
-                                              &kitti_left_cam_img_);
-        cv::imwrite(
-            "/home/atas/kitti_data/2011_09_26/"
-            "2011_09_26_drive_0001_sync/box_img.png",
-            kitti_left_cam_img_);
+            Eigen::MatrixXf corners_on_image =
+                tools_->transformRectCamToImage(corners);
 
-        box_array.boxes.push_back(box);
+            kitti_ros_util::Construct3DBoxOnImage(&corners_on_image,
+                                                  &kitti_left_cam_img_);
+
+            cv::imwrite(image_file_path, kitti_left_cam_img_);
+
+            box_array.boxes.push_back(box);
+
+            visualization_msgs::Marker visualization_marker_;
+
+            visualization_marker_.type = visualization_msgs::Marker::LINE_STRIP;
+            visualization_marker_.header.frame_id = "camera_link";
+            visualization_marker_.header.stamp = ros::Time::now();
+            visualization_marker_.ns = "DetectionBox";
+            visualization_marker_.id = k;
+            visualization_marker_.action = visualization_msgs::Marker::ADD;
+            visualization_marker_.lifetime = ros::Duration(1.2);
+
+            kitti_ros_util::SetMarkerData(&visualization_marker_, 0, 0, 0, x, y,
+                                          z, w, 0.1, 0, 0, 0, 0, 1, 1);
+
+            for (int c = 0; c < 4; c++) {
+                geometry_msgs::Point korner_point;
+                korner_point.x = corners(0, c);
+                korner_point.y = corners(1, c);
+                korner_point.z = corners(2, c);
+                visualization_marker_.points.push_back(korner_point);
+            }
+            for (int c = 4; c < 8; c++) {
+                geometry_msgs::Point korner_point;
+                korner_point.x = corners(0, c);
+                korner_point.y = corners(1, c);
+                korner_point.z = corners(2, c);
+                visualization_marker_.points.push_back(korner_point);
+            }
+
+            Dbox_array.markers.push_back(visualization_marker_);
+        }
     }
 
     jsk_box_array_pub_.publish(box_array);
+    detected_obstacles_publisher_.publish(Dbox_array);
 }

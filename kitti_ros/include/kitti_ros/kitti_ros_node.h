@@ -1,5 +1,4 @@
 #include <kitti_ros/perception/grid_cell_costmap.h>
-#include <kitti_ros/perception/grid_cell_costmap_segmented_pcl.h>
 #include <kitti_ros/perception/sensor_fusion.h>
 #include <iostream>
 #include <sstream>
@@ -22,8 +21,6 @@ class KittiRosNode {
 
     void ObstacleDetectionandGridCellCostmap();
 
-    void ObstacleDetectionSegmentedPCL();
-
    private:
     ros::NodeHandlePtr nh_;
 
@@ -36,8 +33,6 @@ class KittiRosNode {
     SensorFusion sensor_fusion_;
 
     GridCellCostmap grid_cell_costmap_;
-
-    GridCellCostmapSegmentedPCL grid_cell_costmap_segmented_pcl_;
 
     Tools tools_;
 

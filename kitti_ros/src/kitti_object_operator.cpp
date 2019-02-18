@@ -79,8 +79,6 @@ void KittiObjectOperator::VisualizeGTMarkers(
             corners = kitti_ros_util::ComputeCorners(
                 dimensions, position, kitti_objects_[k].rotation_y);
 
-            // std::cout << "KORNER FROM Ground BOX " << corners << std::endl;
-
             kitti_ros_util::SetMarkerData(&visualization_marker_, 0, 0, 0, ox,
                                           oy, oz, ow, 0.1, 0, 0, 0, 0, 1, 1);
 
@@ -117,80 +115,6 @@ void KittiObjectOperator::VisualizeGTMarkers(
             visualization_marker_.points.push_back(up_first_korner_point);
 
             gt3Dbox_array.markers.push_back(visualization_marker_);
-
-            visualization_marker_.type = visualization_msgs::Marker::SPHERE;
-            visualization_marker_.header.frame_id = "camera_link";
-            visualization_marker_.header.stamp = ros::Time::now();
-            visualization_marker_.ns = "sphere";
-            visualization_marker_.id = k * k;
-            visualization_marker_.action = visualization_msgs::Marker::ADD;
-
-            kitti_ros_util::SetMarkerData(&visualization_marker_, position[0],
-                                          position[1], position[2], ox, oy, oz,
-                                          ow, 0.6, 0.6, 1, 1, 0, 1, 1);
-
-            geometry_msgs::Point center_point;
-
-            center_point.x = position[0];
-            center_point.y = position[1];
-            center_point.z = position[2];
-            gt3Dbox_array.markers.push_back(visualization_marker_);
-            //////////////////////////////////////////////////////////////////////////////
-            //////////////////////////////////////////////////////////////////////////////
-            //////////////////////////////////////////////////////////////////////////////
-            cv::Point pt1_on2D, pt2_on2D, pt3_on2D, pt4_on2D, center;
-
-            pt1_on2D.x = corners(0, 0);
-            pt1_on2D.y = corners(2, 0);
-
-            pt2_on2D.x = corners(0, 1);
-            pt2_on2D.y = corners(2, 1);
-
-            pt3_on2D.x = corners(0, 2);
-            pt3_on2D.y = corners(2, 2);
-
-            pt4_on2D.x = corners(0, 3);
-            pt4_on2D.y = corners(2, 3);
-
-            pt1_on2D.x += 30;
-            pt1_on2D.y -= 60;
-
-            pt2_on2D.x += 30;
-            pt2_on2D.y -= 60;
-
-            pt3_on2D.x += 30;
-            pt3_on2D.y -= 60;
-
-            pt4_on2D.x += 30;
-            pt4_on2D.y -= 60;
-
-            // scale up to image dimensions 1200 x 900
-
-            pt1_on2D.x *= 20;
-            pt2_on2D.x *= 20;
-            pt3_on2D.x *= 20;
-            pt4_on2D.x *= 20;
-
-            pt1_on2D.y *= -20;
-            pt2_on2D.y *= -20;
-            pt3_on2D.y *= -20;
-            pt4_on2D.y *= -20;
-
-            center.x = position[0];
-            center.y = position[2];
-            center.x += 30;
-            center.y -= 60;
-            center.x *= 20;
-            center.y *= -20;
-
-            // cv::rectangle(frame, rect_on2D, c, 2, 2, 0);
-            cv::Scalar clr = cv::Scalar(255, 0, 0);
-
-            cv::circle(BEV_image, center, 4, clr, 1, 1, 0);
-            cv::line(BEV_image, pt1_on2D, pt2_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt2_on2D, pt3_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt3_on2D, pt4_on2D, clr, 1, 8);
-            cv::line(BEV_image, pt4_on2D, pt1_on2D, clr, 1, 8);
         }
     }
     kitt_3d_box_pub_.publish(gt3Dbox_array);
