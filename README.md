@@ -4,7 +4,7 @@ Ros Package to access  manipulate and process Raw KITTI dataset. In this Project
 
 Latest Commit; 
 
-![](resources/ros_raw_kitti_1.png)
+![](resources/ros_raw_kitti_2.png)
 
 
 Initial Version 

@@ -133,4 +133,5 @@ void KittiRosNode::ObstacleDetectionandGridCellCostmap() {
     in_cloud.header.frame_id = "camera_link";
     sensor_msgs::PointCloud2::ConstPtr cld_ptr(
         new sensor_msgs::PointCloud2(in_cloud));
+    grid_cell_costmap_.ProcessGridMap(cld_ptr);
 }
