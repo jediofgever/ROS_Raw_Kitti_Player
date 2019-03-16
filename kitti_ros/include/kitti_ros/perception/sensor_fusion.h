@@ -28,7 +28,7 @@ class SensorFusion {
 
     void FillKittiData4Fusion();
 
-    void ProcessFusion(std::string training_image_name);
+    void RGBPCL_PCL2ImageFusion();
 
     void ProcessLabelofBEVImage(std::string& label_infile_string,
                                 std::string image_file_path);
@@ -81,6 +81,8 @@ class SensorFusion {
     std::string frame_id_;
     // ROS Subscriber
     // ROS Publisher
+
+    ros::Publisher vis_pub_;
     ros::Publisher ground_pub_;
     ros::Publisher nonground_pub_;
     ros::Publisher clusters_pub_;

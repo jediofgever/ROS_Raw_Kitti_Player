@@ -1,10 +1,11 @@
 
 <launch>
-  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0052_sync/"/>
+  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync/"/>
   <param name="velodyne_link" type="string" value="velodyne_link" />
   <param name="camera_link" type="string" value="camera_link" />
   <param name="image_dir" type="string" value="image_02/data/" />
   <param name="pcd_file_dir" type="string" value="velodyne_points/data/" />
+  <param name="maskrcnn_detection_image_dir" type="string" value="maskrcnn_detections/detection_image_02/" />
   <param name="image_file_extension" type="string" value=".png" />
   <param name="pcd_file_extension" type="string" value=".bin" />
   <param name="execution_frequency" type="int" value="1" />

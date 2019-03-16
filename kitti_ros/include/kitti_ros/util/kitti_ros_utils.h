@@ -33,6 +33,11 @@ void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image);
 
 std::vector<geometry_msgs::Point> Eigen2GeometryMsgs(Eigen::MatrixXf corners);
 
+cv::Point3f calc3DPointOutOf2DwithYknown(double u, double v, float worldY,
+                                         double fx, double fy, double cx,
+                                         double cy, Eigen::MatrixXd tvec,
+                                         Eigen::MatrixXd rotMat);
+
 };  // namespace kitti_ros_util
 
 #endif

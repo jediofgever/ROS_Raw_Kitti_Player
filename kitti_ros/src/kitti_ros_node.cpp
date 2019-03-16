@@ -34,17 +34,15 @@ KittiRosNode::KittiRosNode() {
 
     // directory of LIDAR point clouds
     nh_->param<string>("pcd_file_dir", pcd_file_dir, "velodyne_points/data/");
+
     // directory of camera images
     nh_->param<string>("image_dir", image_dir, "image_02/data/");
+
     // instance segmented maskrcnn image
     nh_->param<string>("maskrcnn_detection_image_dir",
                        maskrcnn_detection_image_dir,
                        "maskrcnn_detections/detection_image_02/");
 
-    // directory of maskrcnn detection labels
-    nh_->param<string>("maskrcnn_detection_label_dir",
-                       maskrcnn_detection_label_dir,
-                       "maskrcnn_detections/detection_label_02/");
     // extension of files for creating full path to data
     nh_->param<string>("pcd_file_extension", pcd_file_extension, ".bin");
     nh_->param<string>("image_file_extension", image_file_extension, ".png");
@@ -55,6 +53,9 @@ KittiRosNode::KittiRosNode() {
     // stream paths for debugging
     ROS_INFO_STREAM("base_dir: " << base_dir);
     ROS_INFO_STREAM("pcd_file_dir: " << pcd_file_dir);
+    ROS_INFO_STREAM("image_file_dir: " << image_dir);
+    ROS_INFO_STREAM(
+        "maskrcnn_detection_image_dir: " << maskrcnn_detection_image_dir);
     ROS_INFO_STREAM("pcd_file_extension: " << pcd_file_extension);
     ROS_INFO_STREAM("label_file_extension: " << label_file_extension);
     ROS_INFO_STREAM("number_of_pcd_files: " << number_of_pcd_files);
@@ -93,11 +94,9 @@ void KittiRosNode::ProcessNode() {
         // Set lidar scan and Camera Image for Fusion
         sensor_fusion_.FillKittiData4Fusion();
 
-        std::string training_image_name =
-            base_dir + "rgb_pcl/" + buffer.str() + image_file_extension;
         // Process Fusion Publish Results and Raw Data
         sensor_fusion_.PublishRawData();
-        sensor_fusion_.ProcessFusion(training_image_name);
+        sensor_fusion_.RGBPCL_PCL2ImageFusion();
 
         std::string maskrcnn_detection_image_path =
             base_dir + maskrcnn_detection_image_dir + buffer.str() +
@@ -110,24 +109,11 @@ void KittiRosNode::ProcessNode() {
         sensor_fusion_.SegmentedPointCloudFromMaskRCNN(&maskrcnn_image,
                                                        box_projected_images);
 
-        // KittiRosNode::ProcessKittiGroundTruthLabel(label_file,
-        //                                          training_image_name);
-
-        // find Local costmap and Obstacles based on local costmap
-
-        KittiRosNode::ObstacleDetectionandGridCellCostmap();
+        KittiRosNode::ProcessGridCellCostmap();
     }
 }
 
-void KittiRosNode::ProcessKittiGroundTruthLabel(
-    std::string &label_infile_string, std::string image_file_path) {
-    std::ifstream label_infile(label_infile_string.c_str());
-    kitti_objects_ =
-        kitti_object_operator_.GetAllKittiObjectsFrame(label_infile);
-    kitti_object_operator_.VisualizeGTMarkers(kitti_objects_, image_file_path);
-}
-
-void KittiRosNode::ObstacleDetectionandGridCellCostmap() {
+void KittiRosNode::ProcessGridCellCostmap() {
     sensor_msgs::PointCloud2 in_cloud = kitti_data_operator_.GetLidarScan();
     in_cloud.header.stamp = ros::Time::now();
     in_cloud.header.frame_id = "camera_link";

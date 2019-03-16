@@ -15,11 +15,7 @@ class KittiRosNode {
 
     void ProcessKittiPointCloud(std::string &pcd_infile_string);
     void ProcessKittiImage(std::string &pcd_infile_string);
-
-    void ProcessKittiGroundTruthLabel(std::string &label_infile_string,
-                                      std::string image_file_path);
-
-    void ObstacleDetectionandGridCellCostmap();
+    void ProcessGridCellCostmap();
 
    private:
     ros::NodeHandlePtr nh_;

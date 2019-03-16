@@ -36,6 +36,9 @@ SensorFusion::SensorFusion() {
         nh_->advertise<visualization_msgs::MarkerArray>(
             "detected_obstacles_from_local_costmap_segmented_pcl", 1);
 
+    vis_pub_ = nh_->advertise<visualization_msgs::MarkerArray>(
+        "visualization_marker_img_to_velo", 1);
+
     // Publish 3D boundging box projected Image
     box_projetcted_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("box_projetcted_image", 1);
@@ -105,7 +108,7 @@ void SensorFusion::FillKittiData4Fusion() {
     kitti_left_cam_img_ = kitti_data_operator_->GetCameraImage();
 }
 
-void SensorFusion::ProcessFusion(std::string training_image_name) {
+void SensorFusion::RGBPCL_PCL2ImageFusion() {
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
         new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
@@ -115,18 +118,18 @@ void SensorFusion::ProcessFusion(std::string training_image_name) {
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
-    Eigen::MatrixXf matrix_velodyne_points =
+    Eigen::MatrixXf matrix_velodyne_points_in_cam_frame =
         MatrixXf::Zero(4, in_cloud->size());
 
     for (int i = 0; i < in_cloud->size(); ++i) {
-        matrix_velodyne_points(0, i) = in_cloud->points[i].x;
-        matrix_velodyne_points(1, i) = in_cloud->points[i].y;
-        matrix_velodyne_points(2, i) = in_cloud->points[i].z;
-        matrix_velodyne_points(3, i) = 1;
+        matrix_velodyne_points_in_cam_frame(0, i) = in_cloud->points[i].x;
+        matrix_velodyne_points_in_cam_frame(1, i) = in_cloud->points[i].y;
+        matrix_velodyne_points_in_cam_frame(2, i) = in_cloud->points[i].z;
+        matrix_velodyne_points_in_cam_frame(3, i) = 1;
     }
 
     Eigen::MatrixXf matrix_image_points =
-        tools_->transformCamToRectCam(matrix_velodyne_points);
+        tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
     matrix_image_points = tools_->transformRectCamToImage(matrix_image_points);
 
     for (int m = 0; m < matrix_image_points.cols(); m++) {
@@ -142,9 +145,9 @@ void SensorFusion::ProcessFusion(std::string training_image_name) {
                 cv::Vec3b rgb_pixel =
                     kitti_left_cam_img_.at<cv::Vec3b>(point.y, point.x);
 
-                colored_3d_point.x = matrix_velodyne_points(0, m);
-                colored_3d_point.y = matrix_velodyne_points(1, m);
-                colored_3d_point.z = matrix_velodyne_points(2, m);
+                colored_3d_point.x = matrix_velodyne_points_in_cam_frame(0, m);
+                colored_3d_point.y = matrix_velodyne_points_in_cam_frame(1, m);
+                colored_3d_point.z = matrix_velodyne_points_in_cam_frame(2, m);
 
                 colored_3d_point.r = rgb_pixel[2];
                 colored_3d_point.g = rgb_pixel[1];
@@ -214,14 +217,14 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
-    Eigen::MatrixXf matrix_velodyne_points =
+    Eigen::MatrixXf matrix_velodyne_points_in_cam_frame =
         MatrixXf::Zero(4, in_cloud->size());
 
     for (int i = 0; i < in_cloud->size(); ++i) {
-        matrix_velodyne_points(0, i) = in_cloud->points[i].x;
-        matrix_velodyne_points(1, i) = in_cloud->points[i].y;
-        matrix_velodyne_points(2, i) = in_cloud->points[i].z;
-        matrix_velodyne_points(3, i) = 1;
+        matrix_velodyne_points_in_cam_frame(0, i) = in_cloud->points[i].x;
+        matrix_velodyne_points_in_cam_frame(1, i) = in_cloud->points[i].y;
+        matrix_velodyne_points_in_cam_frame(2, i) = in_cloud->points[i].z;
+        matrix_velodyne_points_in_cam_frame(3, i) = 1;
     }
     int kDilationType = cv::MORPH_RECT;
 
@@ -231,7 +234,7 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
 
     Eigen::MatrixXf matrix_image_points =
-        tools_->transformCamToRectCam(matrix_velodyne_points);
+        tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
     matrix_image_points = tools_->transformRectCamToImage(matrix_image_points);
 
     for (int m = 0; m < matrix_image_points.cols(); m++) {
@@ -249,17 +252,20 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                 cv::Vec3b rgb_pixel =
                     maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
 
-                colored_3d_point.x = matrix_velodyne_points(0, m);
-                colored_3d_point.y = matrix_velodyne_points(1, m);
-                colored_3d_point.z = matrix_velodyne_points(2, m);
+                colored_3d_point.x = matrix_velodyne_points_in_cam_frame(0, m);
+                colored_3d_point.y = matrix_velodyne_points_in_cam_frame(1, m);
+                colored_3d_point.z = matrix_velodyne_points_in_cam_frame(2, m);
 
                 colored_3d_point.r = rgb_pixel[2];
                 colored_3d_point.g = rgb_pixel[1];
                 colored_3d_point.b = rgb_pixel[0];
 
-                out_cloud_point_obj_builder.x = matrix_velodyne_points(0, m);
-                out_cloud_point_obj_builder.y = matrix_velodyne_points(1, m);
-                out_cloud_point_obj_builder.z = matrix_velodyne_points(2, m);
+                out_cloud_point_obj_builder.x =
+                    matrix_velodyne_points_in_cam_frame(0, m);
+                out_cloud_point_obj_builder.y =
+                    matrix_velodyne_points_in_cam_frame(1, m);
+                out_cloud_point_obj_builder.z =
+                    matrix_velodyne_points_in_cam_frame(2, m);
 
                 if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
                     rgb_pixel[0] != 255 && colored_3d_point.z > 0 &&
