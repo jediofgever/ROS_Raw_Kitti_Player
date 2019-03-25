@@ -38,6 +38,9 @@ KittiRosNode::KittiRosNode() {
     // directory of camera images
     nh_->param<string>("image_dir", image_dir, "image_02/data/");
 
+    // directory of camera images
+    nh_->param<string>("imu_dir", imu_dir, "oxts/data/");
+
     // instance segmented maskrcnn image
     nh_->param<string>("maskrcnn_detection_image_dir",
                        maskrcnn_detection_image_dir,
@@ -46,6 +49,7 @@ KittiRosNode::KittiRosNode() {
     // extension of files for creating full path to data
     nh_->param<string>("pcd_file_extension", pcd_file_extension, ".bin");
     nh_->param<string>("image_file_extension", image_file_extension, ".png");
+    nh_->param<string>("imu_file_extension", imu_file_extension, ".txt");
 
     // number of framnes in this KITTI scenerio
     nh_->param<int>("number_of_pcd_files", number_of_pcd_files, 108);
@@ -90,6 +94,11 @@ void KittiRosNode::ProcessNode() {
         std::string image_file =
             base_dir + image_dir + buffer.str() + image_file_extension;
         kitti_data_operator_.ReadImageFiles(image_file);
+
+        // define path to image file
+        std::string imu_file =
+            base_dir + imu_dir + buffer.str() + imu_file_extension;
+        kitti_data_operator_.ReadIMU(imu_file);
 
         // Set lidar scan and Camera Image for Fusion
         sensor_fusion_.FillKittiData4Fusion();

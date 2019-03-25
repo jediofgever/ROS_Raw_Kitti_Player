@@ -75,6 +75,7 @@ class SensorFusion {
     sensor_msgs::PointCloud2 lidar_scan_;
     sensor_msgs::PointCloud2 segmented_lidar_scan_;
     cv::Mat kitti_left_cam_img_;
+    sensor_msgs::Imu imu_;
 
     boost::shared_ptr<segmenter::BaseSegmenter> ground_remover_;
     boost::shared_ptr<segmenter::BaseSegmenter> segmenter_;
@@ -100,6 +101,8 @@ class SensorFusion {
     ros::Publisher kitti_pcl_pub_;
 
     ros::Publisher kitti_image_pub_;
+
+    ros::Publisher kitti_imu_pub_;
 
     ros::Publisher birdview_pointcloud_image_pub_;
 

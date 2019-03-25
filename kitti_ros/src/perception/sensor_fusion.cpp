@@ -26,6 +26,8 @@ SensorFusion::SensorFusion() {
     // publish kitti raw image
     kitti_image_pub_ = nh_->advertise<sensor_msgs::Image>("kitti_raw_image", 1);
 
+    kitti_imu_pub_ = nh_->advertise<sensor_msgs::Imu>("kitti_raw_imu", 1);
+
     // publish birdview pointcloud Image
     birdview_pointcloud_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("image_from_colorful_PCL", 1);
@@ -109,6 +111,9 @@ void SensorFusion::FillKittiData4Fusion() {
     lidar_scan_.header.frame_id = "camera_link";
 
     kitti_left_cam_img_ = kitti_data_operator_->GetCameraImage();
+
+    imu_ = kitti_data_operator_->GetImu();
+    imu_.header.frame_id = "imu_link";
 }
 
 void SensorFusion::RGBPCL_PCL2ImageFusion() {
@@ -199,6 +204,8 @@ void SensorFusion::PublishRawData() {
 
     // PUBLISH Raw Lidar scan
     kitti_pcl_pub_.publish(lidar_scan_);
+
+    kitti_imu_pub_.publish(imu_);
 }
 
 float SensorFusion::EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point) {
