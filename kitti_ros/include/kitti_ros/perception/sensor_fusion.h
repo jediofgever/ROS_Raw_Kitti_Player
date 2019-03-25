@@ -93,6 +93,8 @@ class SensorFusion {
 
     ros::Publisher segmented_pointcloud_from_maskrcnn_pub_;
 
+    ros::Publisher static_point_cloud_pub_;
+
     ros::Publisher pointcloud_projected_image_pub_;
 
     ros::Publisher kitti_pcl_pub_;

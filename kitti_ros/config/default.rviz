@@ -3,7 +3,9 @@ Panels:
     Help Height: 75
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /PointCloud21
+        - /PointCloud22
       Splitter Ratio: 0.5
     Tree Height: 414
   - Class: rviz/Selection
@@ -58,7 +60,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 10
@@ -75,7 +77,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -101,7 +103,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0500000007
       Style: Flat Squares
-      Topic: /kitti_raw_pointcloud
+      Topic: /static_point_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -266,10 +268,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.114797406
+      Pitch: 0.224797413
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.91805291
+      Yaw: 3.3280499
     Saved: ~
 Window Geometry:
   Displays:

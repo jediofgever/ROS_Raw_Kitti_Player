@@ -13,6 +13,9 @@ SensorFusion::SensorFusion() {
         nh_->advertise<sensor_msgs::PointCloud2>(
             "segmented_pointcloud_from_maskrcnn", 1);
 
+    static_point_cloud_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("static_point_cloud", 1);
+
     // publish point cloud projected IMage
     pointcloud_projected_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("pointcloud_projected_image", 1);
@@ -212,6 +215,9 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr static_cloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+
     pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder(
         new pcl::PointCloud<pcl::PointXYZI>);
 
@@ -229,9 +235,12 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     int kDilationType = cv::MORPH_RECT;
 
     cv::Mat element = cv::getStructuringElement(
-        kDilationType, cv::Size(2 * 7 + 1, 2 * 7 + 1), cv::Point(7, 7));
+        kDilationType, cv::Size(2 * 30 + 1, 2 * 30 + 1), cv::Point(30, 30));
 
-    cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
+    // cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
+    // element);
+    cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
+                     cv::Size(7, 7), 0, 0);
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
@@ -242,39 +251,60 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         point.x = matrix_image_points(0, m);
         point.y = matrix_image_points(1, m);
 
+        pcl::PointXYZ static_point;
+
         // Store korners in pixels only of they are on image plane
         if (point.x >= 0 && point.x <= 1242) {
             if (point.y >= 0 && point.y <= 375) {
-                pcl::PointXYZRGB colored_3d_point;
+                if (matrix_velodyne_points_in_cam_frame(2, m) > 0) {
+                    pcl::PointXYZRGB colored_3d_point;
 
-                pcl::PointXYZI out_cloud_point_obj_builder;
+                    pcl::PointXYZI out_cloud_point_obj_builder;
 
-                cv::Vec3b rgb_pixel =
-                    maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
+                    cv::Vec3b rgb_pixel =
+                        maskrcnn_segmented_image->at<cv::Vec3b>(point.y,
+                                                                point.x);
 
-                colored_3d_point.x = matrix_velodyne_points_in_cam_frame(0, m);
-                colored_3d_point.y = matrix_velodyne_points_in_cam_frame(1, m);
-                colored_3d_point.z = matrix_velodyne_points_in_cam_frame(2, m);
+                    colored_3d_point.x =
+                        matrix_velodyne_points_in_cam_frame(0, m);
+                    colored_3d_point.y =
+                        matrix_velodyne_points_in_cam_frame(1, m);
+                    colored_3d_point.z =
+                        matrix_velodyne_points_in_cam_frame(2, m);
 
-                colored_3d_point.r = rgb_pixel[2];
-                colored_3d_point.g = rgb_pixel[1];
-                colored_3d_point.b = rgb_pixel[0];
+                    colored_3d_point.r = rgb_pixel[2];
+                    colored_3d_point.g = rgb_pixel[1];
+                    colored_3d_point.b = rgb_pixel[0];
 
-                out_cloud_point_obj_builder.x =
-                    matrix_velodyne_points_in_cam_frame(0, m);
-                out_cloud_point_obj_builder.y =
-                    matrix_velodyne_points_in_cam_frame(1, m);
-                out_cloud_point_obj_builder.z =
-                    matrix_velodyne_points_in_cam_frame(2, m);
+                    out_cloud_point_obj_builder.x =
+                        matrix_velodyne_points_in_cam_frame(0, m);
+                    out_cloud_point_obj_builder.y =
+                        matrix_velodyne_points_in_cam_frame(1, m);
+                    out_cloud_point_obj_builder.z =
+                        matrix_velodyne_points_in_cam_frame(2, m);
 
-                if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
-                    rgb_pixel[0] != 255 && colored_3d_point.z > 0 &&
-                    colored_3d_point.y < 1.65) {
-                    rgb_out_cloud->points.push_back(colored_3d_point);
-                    out_cloud_obj_builder->points.push_back(
-                        out_cloud_point_obj_builder);
+                    if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
+                    rgb_pixel[0] != 255 && colored_3d_point.z > 0 /*&&
+                    colored_3d_point.y < 1.65*/) {
+                        rgb_out_cloud->points.push_back(colored_3d_point);
+                        out_cloud_obj_builder->points.push_back(
+                            out_cloud_point_obj_builder);
+                    } else {
+                        static_point.x =
+                            matrix_velodyne_points_in_cam_frame(0, m);
+                        static_point.y =
+                            matrix_velodyne_points_in_cam_frame(1, m);
+                        static_point.z =
+                            matrix_velodyne_points_in_cam_frame(2, m);
+                        static_cloud->points.push_back(static_point);
+                    }
                 }
             }
+        } else {
+            static_point.x = matrix_velodyne_points_in_cam_frame(0, m);
+            static_point.y = matrix_velodyne_points_in_cam_frame(1, m);
+            static_point.z = matrix_velodyne_points_in_cam_frame(2, m);
+            // static_cloud->points.push_back(static_point);
         }
     }
 
@@ -298,6 +328,12 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     pcl::toROSMsg(*rgb_out_cloud, maskrcnn_cloud_msg);
     maskrcnn_cloud_msg.header = lidar_scan_.header;
     segmented_pointcloud_from_maskrcnn_pub_.publish(maskrcnn_cloud_msg);
+
+    // prepare and publish static cloud  Lidar scan
+    sensor_msgs::PointCloud2 static_cloud_msg;
+    pcl::toROSMsg(*static_cloud, static_cloud_msg);
+    static_cloud_msg.header = lidar_scan_.header;
+    static_point_cloud_pub_.publish(static_cloud_msg);
 
     SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
     SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder, image_file_path,

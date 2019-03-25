@@ -194,44 +194,4 @@ std::vector<geometry_msgs::Point> Eigen2GeometryMsgs(Eigen::MatrixXf corners) {
     return corners_geometry_msgs;
 }
 
-cv::Point3f calc3DPointOutOf2DwithYknown(double u, double v, float worldY,
-                                         double fx, double fy, double cx,
-                                         double cy, Eigen::MatrixXd tvec,
-                                         Eigen::MatrixXd rotMat) {
-    cv::Point3f tmpPoint;
-
-    float r1 = rotMat(0, 0);
-    float r2 = rotMat(0, 1);
-    float r3 = rotMat(0, 2);
-
-    float r4 = rotMat(1, 0);
-    float r5 = rotMat(1, 1);
-    float r6 = rotMat(1, 2);
-
-    float r7 = rotMat(2, 0);
-    float r8 = rotMat(2, 1);
-    float r9 = rotMat(2, 2);
-
-    float t1 = tvec(0, 0);
-    float t2 = tvec(1, 0);
-    float t3 = tvec(2, 0);
-
-    float xt = (u / fx) - (cx / fx);
-    float yt = (v / fy) - (cy / fy);
-
-    float K1 = xt * r8 * worldY + xt * t3 - r2 * worldY - t1;
-    float K2 = xt * r9 - r3;
-    float K3 = r1 - xt * r7;
-
-    float worldZ = (yt * r7 * K1 + yt * K3 * r8 * worldY + yt * K3 * t3 -
-                    r4 * K1 - K3 * r5 * worldY - K3 * t2) /
-                   (r4 * K2 + K3 * r6 - yt * r7 * K2 - yt * K3 * r9);
-
-    float worldX = (K1 + worldZ * K2) / K3;
-
-    tmpPoint = cv::Point3f(worldX, worldY, worldZ);
-
-    return tmpPoint;
-}
-
 };  // namespace kitti_ros_util
