@@ -2,6 +2,14 @@
 
 KITTIDataOperator::KITTIDataOperator() {
     nh_ = ros::NodeHandlePtr(new ros::NodeHandle());
+
+    // publish Kitti raw point cloud
+    kitti_pcl_pub_ =
+        nh_->advertise<sensor_msgs::PointCloud2>("kitti_raw_pointcloud", 1);
+    // publish kitti raw image
+    kitti_image_pub_ = nh_->advertise<sensor_msgs::Image>("kitti_raw_image", 1);
+
+    kitti_imu_pub_ = nh_->advertise<sensor_msgs::Imu>("kitti_raw_imu", 1);
 };
 
 KITTIDataOperator::~KITTIDataOperator(){};
@@ -55,25 +63,6 @@ void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
     }
     input.close();
 
-    // Define matrix to write velodyne points into
-
-    MatrixXf matrix_velodyne_points = MatrixXf::Zero(4, cloud->size());
-    for (int i = 0; i < cloud->size(); ++i) {
-        matrix_velodyne_points(0, i) = cloud->points[i].x;
-        matrix_velodyne_points(1, i) = cloud->points[i].y;
-        matrix_velodyne_points(2, i) = cloud->points[i].z;
-        matrix_velodyne_points(3, i) = 1;
-    }
-
-    // Transform Velodyne Points to Camerta Frame
-    matrix_velodyne_points = tools_.transformVeloToCam(matrix_velodyne_points);
-
-    for (int i = 0; i < matrix_velodyne_points.cols(); i++) {
-        cloud->points[i].x = matrix_velodyne_points(0, i);
-        cloud->points[i].y = matrix_velodyne_points(1, i);
-        cloud->points[i].z = matrix_velodyne_points(2, i);
-    }
-
     // declare ROS type Point cloud to puvlish pointcloud which is in camera
     // frame now
     sensor_msgs::PointCloud2 cloud_msg;
@@ -99,7 +88,7 @@ void KITTIDataOperator::ReadIMU(std::string full_filename_oxts) {
 
     if (!getIMU(full_filename_oxts, &ros_msgImu)) {
         ROS_ERROR_STREAM("Fail to open " << full_filename_oxts);
-        return ;
+        return;
     }
     KITTIDataOperator::SetImu(ros_msgImu);
 }
@@ -156,4 +145,29 @@ int KITTIDataOperator::getIMU(string filename, sensor_msgs::Imu *ros_msgImu) {
     ros_msgImu->orientation.w = q.getW();
 
     return 1;
+}
+
+void KITTIDataOperator::FillKittiData() {
+    lidar_scan_ = KITTIDataOperator::GetLidarScan();
+    lidar_scan_.header.stamp = ros::Time::now();
+    lidar_scan_.header.frame_id = "velodyne_link";
+
+    camera_image_ = KITTIDataOperator::GetCameraImage();
+
+    imu_ = KITTIDataOperator::GetImu();
+    imu_.header.frame_id = "imu_link";
+}
+
+void KITTIDataOperator::PublishRawData() {
+    // Prepare and publish KITTI raw image
+    cv_bridge::CvImage cv_kitti_image;
+    cv_kitti_image.image = camera_image_;
+    cv_kitti_image.encoding = "bgr8";
+    cv_kitti_image.header.stamp = ros::Time::now();
+    kitti_image_pub_.publish(cv_kitti_image.toImageMsg());
+
+    // PUBLISH Raw Lidar scan
+    kitti_pcl_pub_.publish(lidar_scan_);
+
+    kitti_imu_pub_.publish(imu_);
 }

@@ -101,10 +101,10 @@ void KittiRosNode::ProcessNode() {
         kitti_data_operator_.ReadIMU(imu_file);
 
         // Set lidar scan and Camera Image for Fusion
-        sensor_fusion_.FillKittiData4Fusion();
+        kitti_data_operator_.FillKittiData();
 
         // Process Fusion Publish Results and Raw Data
-        sensor_fusion_.PublishRawData();
+        kitti_data_operator_.PublishRawData();
         sensor_fusion_.RGBPCL_PCL2ImageFusion();
 
         std::string maskrcnn_detection_image_path =

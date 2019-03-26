@@ -20,14 +20,6 @@ SensorFusion::SensorFusion() {
     pointcloud_projected_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("pointcloud_projected_image", 1);
 
-    // publish Kitti raw point cloud
-    kitti_pcl_pub_ =
-        nh_->advertise<sensor_msgs::PointCloud2>("kitti_raw_pointcloud", 1);
-    // publish kitti raw image
-    kitti_image_pub_ = nh_->advertise<sensor_msgs::Image>("kitti_raw_image", 1);
-
-    kitti_imu_pub_ = nh_->advertise<sensor_msgs::Imu>("kitti_raw_imu", 1);
-
     // publish birdview pointcloud Image
     birdview_pointcloud_image_pub_ =
         nh_->advertise<sensor_msgs::Image>("image_from_colorful_PCL", 1);
@@ -105,18 +97,10 @@ void SensorFusion::SetTools(Tools* value) { tools_ = value; }
 
 const Tools* SensorFusion::GetTools() { return tools_; }
 
-void SensorFusion::FillKittiData4Fusion() {
+void SensorFusion::RGBPCL_PCL2ImageFusion() {
     lidar_scan_ = kitti_data_operator_->GetLidarScan();
-    lidar_scan_.header.stamp = ros::Time::now();
-    lidar_scan_.header.frame_id = "camera_link";
-
     kitti_left_cam_img_ = kitti_data_operator_->GetCameraImage();
 
-    imu_ = kitti_data_operator_->GetImu();
-    imu_.header.frame_id = "imu_link";
-}
-
-void SensorFusion::RGBPCL_PCL2ImageFusion() {
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
         new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
@@ -126,15 +110,20 @@ void SensorFusion::RGBPCL_PCL2ImageFusion() {
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
+    Eigen::MatrixXf matrix_velodyne_points_in_velo_frame =
+        MatrixXf::Zero(4, in_cloud->size());
     Eigen::MatrixXf matrix_velodyne_points_in_cam_frame =
         MatrixXf::Zero(4, in_cloud->size());
 
     for (int i = 0; i < in_cloud->size(); ++i) {
-        matrix_velodyne_points_in_cam_frame(0, i) = in_cloud->points[i].x;
-        matrix_velodyne_points_in_cam_frame(1, i) = in_cloud->points[i].y;
-        matrix_velodyne_points_in_cam_frame(2, i) = in_cloud->points[i].z;
-        matrix_velodyne_points_in_cam_frame(3, i) = 1;
+        matrix_velodyne_points_in_velo_frame(0, i) = in_cloud->points[i].x;
+        matrix_velodyne_points_in_velo_frame(1, i) = in_cloud->points[i].y;
+        matrix_velodyne_points_in_velo_frame(2, i) = in_cloud->points[i].z;
+        matrix_velodyne_points_in_velo_frame(3, i) = 1;
     }
+
+    matrix_velodyne_points_in_cam_frame =
+        tools_->transformVeloToCam(matrix_velodyne_points_in_velo_frame);
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
@@ -153,15 +142,15 @@ void SensorFusion::RGBPCL_PCL2ImageFusion() {
                 cv::Vec3b rgb_pixel =
                     kitti_left_cam_img_.at<cv::Vec3b>(point.y, point.x);
 
-                colored_3d_point.x = matrix_velodyne_points_in_cam_frame(0, m);
-                colored_3d_point.y = matrix_velodyne_points_in_cam_frame(1, m);
-                colored_3d_point.z = matrix_velodyne_points_in_cam_frame(2, m);
+                colored_3d_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+                colored_3d_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+                colored_3d_point.z = matrix_velodyne_points_in_velo_frame(2, m);
 
                 colored_3d_point.r = rgb_pixel[2];
                 colored_3d_point.g = rgb_pixel[1];
                 colored_3d_point.b = rgb_pixel[0];
 
-                if (colored_3d_point.z > 0) {
+                if (colored_3d_point.x > 0) {
                     float distance_to_point =
                         SensorFusion::EuclidianDistofPoint(&colored_3d_point);
 
@@ -194,20 +183,6 @@ void SensorFusion::RGBPCL_PCL2ImageFusion() {
         pointcloud_projected_image.toImageMsg());
 }
 
-void SensorFusion::PublishRawData() {
-    // Prepare and publish KITTI raw image
-    cv_bridge::CvImage cv_kitti_image;
-    cv_kitti_image.image = kitti_left_cam_img_;
-    cv_kitti_image.encoding = "bgr8";
-    cv_kitti_image.header.stamp = ros::Time::now();
-    kitti_image_pub_.publish(cv_kitti_image.toImageMsg());
-
-    // PUBLISH Raw Lidar scan
-    kitti_pcl_pub_.publish(lidar_scan_);
-
-    kitti_imu_pub_.publish(imu_);
-}
-
 float SensorFusion::EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point) {
     float distance = std::sqrt(std::pow(colored_3d_point->x, 2) +
                                std::pow(colored_3d_point->y, 2) +
@@ -230,15 +205,21 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
 
+    Eigen::MatrixXf matrix_velodyne_points_in_velo_frame =
+        MatrixXf::Zero(4, in_cloud->size());
     Eigen::MatrixXf matrix_velodyne_points_in_cam_frame =
         MatrixXf::Zero(4, in_cloud->size());
 
     for (int i = 0; i < in_cloud->size(); ++i) {
-        matrix_velodyne_points_in_cam_frame(0, i) = in_cloud->points[i].x;
-        matrix_velodyne_points_in_cam_frame(1, i) = in_cloud->points[i].y;
-        matrix_velodyne_points_in_cam_frame(2, i) = in_cloud->points[i].z;
-        matrix_velodyne_points_in_cam_frame(3, i) = 1;
+        matrix_velodyne_points_in_velo_frame(0, i) = in_cloud->points[i].x;
+        matrix_velodyne_points_in_velo_frame(1, i) = in_cloud->points[i].y;
+        matrix_velodyne_points_in_velo_frame(2, i) = in_cloud->points[i].z;
+        matrix_velodyne_points_in_velo_frame(3, i) = 1;
     }
+
+    matrix_velodyne_points_in_cam_frame =
+        tools_->transformVeloToCam(matrix_velodyne_points_in_velo_frame);
+
     int kDilationType = cv::MORPH_RECT;
 
     cv::Mat element = cv::getStructuringElement(
@@ -246,8 +227,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     // cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
     // element);
-    cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
-                     cv::Size(7, 7), 0, 0);
+    /*cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
+                     cv::Size(7, 7), 0, 0);*/
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
@@ -263,7 +244,7 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         // Store korners in pixels only of they are on image plane
         if (point.x >= 0 && point.x <= 1242) {
             if (point.y >= 0 && point.y <= 375) {
-                if (matrix_velodyne_points_in_cam_frame(2, m) > 0) {
+                if (matrix_velodyne_points_in_velo_frame(0, m) > 0) {
                     pcl::PointXYZRGB colored_3d_point;
 
                     pcl::PointXYZI out_cloud_point_obj_builder;
@@ -273,44 +254,44 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                                                                 point.x);
 
                     colored_3d_point.x =
-                        matrix_velodyne_points_in_cam_frame(0, m);
+                        matrix_velodyne_points_in_velo_frame(0, m);
                     colored_3d_point.y =
-                        matrix_velodyne_points_in_cam_frame(1, m);
+                        matrix_velodyne_points_in_velo_frame(1, m);
                     colored_3d_point.z =
-                        matrix_velodyne_points_in_cam_frame(2, m);
+                        matrix_velodyne_points_in_velo_frame(2, m);
 
                     colored_3d_point.r = rgb_pixel[2];
                     colored_3d_point.g = rgb_pixel[1];
                     colored_3d_point.b = rgb_pixel[0];
 
                     out_cloud_point_obj_builder.x =
-                        matrix_velodyne_points_in_cam_frame(0, m);
+                        matrix_velodyne_points_in_velo_frame(0, m);
                     out_cloud_point_obj_builder.y =
-                        matrix_velodyne_points_in_cam_frame(1, m);
+                        matrix_velodyne_points_in_velo_frame(1, m);
                     out_cloud_point_obj_builder.z =
-                        matrix_velodyne_points_in_cam_frame(2, m);
+                        matrix_velodyne_points_in_velo_frame(2, m);
 
                     if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
-                    rgb_pixel[0] != 255 && colored_3d_point.z > 0 /*&&
-                    colored_3d_point.y < 1.65*/) {
+                        rgb_pixel[0] != 255 && colored_3d_point.x > 0 &&
+                        colored_3d_point.z > -1.65) {
                         rgb_out_cloud->points.push_back(colored_3d_point);
                         out_cloud_obj_builder->points.push_back(
                             out_cloud_point_obj_builder);
                     } else {
                         static_point.x =
-                            matrix_velodyne_points_in_cam_frame(0, m);
+                            matrix_velodyne_points_in_velo_frame(0, m);
                         static_point.y =
-                            matrix_velodyne_points_in_cam_frame(1, m);
+                            matrix_velodyne_points_in_velo_frame(1, m);
                         static_point.z =
-                            matrix_velodyne_points_in_cam_frame(2, m);
+                            matrix_velodyne_points_in_velo_frame(2, m);
                         static_cloud->points.push_back(static_point);
                     }
                 }
             }
         } else {
-            static_point.x = matrix_velodyne_points_in_cam_frame(0, m);
-            static_point.y = matrix_velodyne_points_in_cam_frame(1, m);
-            static_point.z = matrix_velodyne_points_in_cam_frame(2, m);
+            static_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+            static_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+            static_point.z = matrix_velodyne_points_in_velo_frame(2, m);
             // static_cloud->points.push_back(static_point);
         }
     }
@@ -351,8 +332,6 @@ void SensorFusion::ProcessObjectBuilder(
     pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder,
     std::string image_file_path, cv::Mat* maskrcnn_segmented_image) {
     std_msgs::Header header = lidar_scan_.header;
-    header.frame_id = "camera_link";
-    header.stamp = ros::Time::now();
 
     std::vector<PointICloudPtr> cloud_clusters;
     PointICloudPtr cloud_ground(new PointICloud);
@@ -382,22 +361,22 @@ void SensorFusion::ProcessObjectBuilder(
     object_builder_->build(cloud_clusters, &objects);
 
     jsk_recognition_msgs::BoundingBoxArray box_array;
-    box_array.header.frame_id = "camera_link";
+    box_array.header.frame_id = "velodyne_link";
     visualization_msgs::MarkerArray Dbox_array;
 
     for (int k = 0; k < objects.size(); k++) {
         jsk_recognition_msgs::BoundingBox box;
-        box.header.frame_id = "camera_link";
+        box.header.frame_id = "velodyne_link";
         autosense::ObjectPtr obj_ptr = objects.at(k);
 
         if (obj_ptr->height < 22.5) {
             box.dimensions.x = obj_ptr->length;
             box.dimensions.y = obj_ptr->width;
-            box.dimensions.z = 2.0;  // obj_ptr->height;
+            box.dimensions.z = 2.0;
 
             box.pose.position.x = obj_ptr->ground_center[0];
             box.pose.position.y = obj_ptr->ground_center[1];
-            box.pose.position.z = obj_ptr->ground_center[2] + obj_ptr->length;
+            box.pose.position.z = obj_ptr->ground_center[2];
 
             double yaw_rad = obj_ptr->yaw_rad;
             double x, y, z, w;
@@ -411,14 +390,14 @@ void SensorFusion::ProcessObjectBuilder(
             std::vector<float> dimensions, position;
 
             dimensions.push_back(obj_ptr->height);
-            dimensions.push_back(1.6);
+            dimensions.push_back(obj_ptr->width);
             dimensions.push_back(obj_ptr->length);
 
             position.push_back(obj_ptr->ground_center[0]);
             position.push_back(obj_ptr->ground_center[1]);
-            position.push_back(obj_ptr->ground_center[2] + obj_ptr->height);
+            position.push_back(obj_ptr->ground_center[2]);
 
-            Eigen::MatrixXf corners;
+            Eigen::MatrixXf corners_in_velo, corners;
             corners = kitti_ros_util::KornersWorldtoKornersImage(
                 dimensions, position, yaw_rad);
 
@@ -427,6 +406,10 @@ void SensorFusion::ProcessObjectBuilder(
 
             corners.conservativeResize(corners.rows() + 1, corners.cols());
             corners.row(corners.rows() - 1) = vec;
+            corners_in_velo = corners;
+
+            corners = tools_->transformVeloToCam(corners);
+            corners = tools_->transformCamToRectCam(corners);
 
             Eigen::MatrixXf corners_on_image =
                 tools_->transformRectCamToImage(corners);
@@ -449,7 +432,7 @@ void SensorFusion::ProcessObjectBuilder(
             visualization_msgs::Marker visualization_marker_;
 
             visualization_marker_.type = visualization_msgs::Marker::LINE_STRIP;
-            visualization_marker_.header.frame_id = "camera_link";
+            visualization_marker_.header.frame_id = "velodyne_link";
             visualization_marker_.header.stamp = ros::Time::now();
             visualization_marker_.ns = "DetectionBox";
             visualization_marker_.id = k;
@@ -460,7 +443,7 @@ void SensorFusion::ProcessObjectBuilder(
                                           z, w, 0.1, 0, 0, 0, 0, 1, 1);
 
             std::vector<geometry_msgs::Point> corners_geometry_msgs =
-                kitti_ros_util::Eigen2GeometryMsgs(corners);
+                kitti_ros_util::Eigen2GeometryMsgs(corners_in_velo);
             // Construct 3D box with entering point in a sequence
             // yeah I know it looks ugly
             visualization_marker_.points.push_back(corners_geometry_msgs.at(0));

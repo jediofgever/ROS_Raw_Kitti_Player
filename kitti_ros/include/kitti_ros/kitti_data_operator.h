@@ -53,10 +53,20 @@ class KITTIDataOperator {
 
     void ReadIMU(std::string full_filename_oxts);
 
+    void FillKittiData();
+
+    void PublishRawData();
+
    private:
     sensor_msgs::PointCloud2 lidar_scan_;
 
     sensor_msgs::PointCloud2 lidar_scan_in_velo_cordinates_;
+
+    ros::Publisher kitti_pcl_pub_;
+
+    ros::Publisher kitti_image_pub_;
+
+    ros::Publisher kitti_imu_pub_;
 
     // Captured camera image.
     cv::Mat camera_image_;

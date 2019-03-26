@@ -130,7 +130,7 @@ Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
     y << w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2;
 
     Eigen::MatrixXf z(1, 8);
-    z << -h, -h, -h, -h, 0, 0, 0, 0;
+    z << h, h, h, h, 0, 0, 0, 0;
 
     corners.row(0) = x;
     corners.row(1) = y;
