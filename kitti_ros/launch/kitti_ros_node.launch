@@ -8,8 +8,8 @@
   <param name="maskrcnn_detection_image_dir" type="string" value="maskrcnn_detections/detection_image_02/" />
   <param name="image_file_extension" type="string" value=".png" />
   <param name="pcd_file_extension" type="string" value=".bin" />
-  <param name="execution_frequency" type="int" value="1" />
-  <param name="number_of_pcd_files" type="int" value="70" />
+  <param name="execution_frequency" type="int" value="10" />
+  <param name="number_of_pcd_files" type="int" value="259" />
 
 
       <!-- ROS parameters -->

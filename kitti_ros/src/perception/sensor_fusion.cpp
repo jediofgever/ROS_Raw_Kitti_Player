@@ -227,8 +227,8 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     // cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
     // element);
-    /*cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
-                     cv::Size(7, 7), 0, 0);*/
+    cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
+                     cv::Size(13, 13), 0, 0);
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);

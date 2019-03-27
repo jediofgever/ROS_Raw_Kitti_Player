@@ -9,7 +9,7 @@ KITTIDataOperator::KITTIDataOperator() {
     // publish kitti raw image
     kitti_image_pub_ = nh_->advertise<sensor_msgs::Image>("kitti_raw_image", 1);
 
-    kitti_imu_pub_ = nh_->advertise<sensor_msgs::Imu>("kitti_raw_imu", 1);
+    kitti_imu_pub_ = nh_->advertise<sensor_msgs::Imu>("imu", 1);
 };
 
 KITTIDataOperator::~KITTIDataOperator(){};

@@ -119,6 +119,9 @@ void KittiRosNode::ProcessNode() {
                                                        box_projected_images);
 
         KittiRosNode::ProcessGridCellCostmap();
+        if (i == number_of_pcd_files - 1) {
+            ros::shutdown();
+        }
     }
 }
 
