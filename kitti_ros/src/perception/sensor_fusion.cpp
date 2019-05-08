@@ -3,6 +3,9 @@
 SensorFusion::SensorFusion() {
     nh_ = ros::NodeHandlePtr(new ros::NodeHandle());
 
+    nh_->param<bool>("enable_3D_detection", enable_3D_detection_, false);
+    nh_->param<bool>("filter_rgb_cloud", filter_rgb_cloud_, false);
+
     // Publish rgb colored pointcloud
     rgb_pointcloud_pub_ =
         nh_->advertise<sensor_msgs::PointCloud2>("kitti_rgb_pointcloud", 1);
@@ -97,18 +100,25 @@ void SensorFusion::SetTools(Tools* value) { tools_ = value; }
 
 const Tools* SensorFusion::GetTools() { return tools_; }
 
-void SensorFusion::RGBPCL_PCL2ImageFusion() {
+void SensorFusion::RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path) {
     lidar_scan_ = kitti_data_operator_->GetLidarScan();
     kitti_left_cam_img_ = kitti_data_operator_->GetCameraImage();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
-        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud(
+        new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
     cv::Mat cv_pointcloud_projected_image = kitti_left_cam_img_.clone();
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
+    std::vector<double> v_fov = {-24.9, 2.0};
+    std::vector<double> d_range = {0, 1.0};
+
+    /*cv::Mat imga = kitti_ros_util::point_cloud_to_panorama(in_cloud, 0.42,
+       0.35, v_fov, d_range, 3);*/
+
+    // cv::imwrite("/home/atas/o.png", imga);
 
     Eigen::MatrixXf matrix_velodyne_points_in_velo_frame =
         MatrixXf::Zero(4, in_cloud->size());
@@ -155,13 +165,33 @@ void SensorFusion::RGBPCL_PCL2ImageFusion() {
                         SensorFusion::EuclidianDistofPoint(&colored_3d_point);
 
                     cv::circle(cv_pointcloud_projected_image, point, 1,
-                               cv::Scalar(120, 0, distance_to_point * 15), 1);
+                               cv::Scalar(distance_to_point * 15, 2,
+                                          distance_to_point * 15),
+                               1);
 
                     rgb_out_cloud->points.push_back(colored_3d_point);
                 }
             }
         }
     }
+
+    /*FILE* stream;
+    stream = fopen(rgb_cloud_file_path.c_str(), "wb");
+    int32_t num = rgb_out_cloud->points.size();
+    pcl::PointXYZRGB* data =
+        (pcl::PointXYZRGB*)malloc(num * sizeof(pcl::PointXYZRGB));
+
+    for (int k = 0; k < rgb_out_cloud->points.size(); k++) {
+        data[k] = rgb_out_cloud->points[k];
+        // data[4 * k + 1] = static_cloud.points[k].y;
+        // data[4 * k + 2] = static_cloud.points[k].z;
+        // data[4 * k + 3] = 0.00;
+    }
+
+    fwrite(data, sizeof(pcl::PointXYZRGB), 1 * num, stream);
+    // free(data);
+
+    fclose(stream);*/
 
     // Create birdeyeview Lidar Image , with rgb values taken from corresponding
     // pixel
@@ -191,14 +221,14 @@ float SensorFusion::EuclidianDistofPoint(pcl::PointXYZRGB* colored_3d_point) {
 }
 
 void SensorFusion::SegmentedPointCloudFromMaskRCNN(
-    cv::Mat* maskrcnn_segmented_image, std::string image_file_path) {
+    cv::Mat* maskrcnn_segmented_image, std::string image_file_path,
+    std::string static_cloud_file_path) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(
         new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_out_cloud(
         new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr static_cloud(
-        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ> static_cloud;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_obj_builder(
         new pcl::PointCloud<pcl::PointXYZI>);
@@ -223,12 +253,11 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     int kDilationType = cv::MORPH_RECT;
 
     cv::Mat element = cv::getStructuringElement(
-        kDilationType, cv::Size(2 * 30 + 1, 2 * 30 + 1), cv::Point(30, 30));
+        kDilationType, cv::Size(2 * 1 + 1, 2 * 1 + 1), cv::Point(1, 1));
 
-    // cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
-    // element);
-    cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
-                     cv::Size(13, 13), 0, 0);
+    cv::erode(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
+    /*cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
+                     cv::Size(21, 21), 0, 0);*/
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
@@ -238,8 +267,6 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         cv::Point point;
         point.x = matrix_image_points(0, m);
         point.y = matrix_image_points(1, m);
-
-        pcl::PointXYZ static_point;
 
         // Store korners in pixels only of they are on image plane
         if (point.x >= 0 && point.x <= 1242) {
@@ -271,12 +298,21 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                     out_cloud_point_obj_builder.z =
                         matrix_velodyne_points_in_velo_frame(2, m);
 
+                    pcl::PointXYZ static_point;
+
                     if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
                         rgb_pixel[0] != 255 && colored_3d_point.x > 0 &&
                         colored_3d_point.z > -1.65) {
                         rgb_out_cloud->points.push_back(colored_3d_point);
                         out_cloud_obj_builder->points.push_back(
                             out_cloud_point_obj_builder);
+
+                        static_point.x =
+                            matrix_velodyne_points_in_velo_frame(0, m);
+                        static_point.y =
+                            matrix_velodyne_points_in_velo_frame(1, m);
+                        static_point.z = -1.74;
+                        static_cloud.points.push_back(static_point);
                     } else {
                         static_point.x =
                             matrix_velodyne_points_in_velo_frame(0, m);
@@ -284,32 +320,42 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
                             matrix_velodyne_points_in_velo_frame(1, m);
                         static_point.z =
                             matrix_velodyne_points_in_velo_frame(2, m);
-                        static_cloud->points.push_back(static_point);
+                        static_cloud.points.push_back(static_point);
                     }
                 }
             }
-        } else {
-            static_point.x = matrix_velodyne_points_in_velo_frame(0, m);
-            static_point.y = matrix_velodyne_points_in_velo_frame(1, m);
-            static_point.z = matrix_velodyne_points_in_velo_frame(2, m);
-            // static_cloud->points.push_back(static_point);
         }
     }
 
-    // Create the filtering object
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-    sor.setInputCloud(rgb_out_cloud);
-    sor.setMeanK(12);
-    sor.setStddevMulThresh(0.2);
-    sor.filter(*rgb_out_cloud);
+    /*FILE* stream;
+    stream = fopen(static_cloud_file_path.c_str(), "wb");
+    int32_t num = static_cloud.points.size();
+    pcl::PointXYZ* data = (pcl::PointXYZ*)malloc(num * sizeof(pcl::PointXYZ));
 
-    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> outrem;
-    // build the filter
-    outrem.setInputCloud(rgb_out_cloud);
-    outrem.setRadiusSearch(0.3);
-    outrem.setMinNeighborsInRadius(4);
-    // apply filter
-    outrem.filter(*rgb_out_cloud);
+    for (int k = 0; k < static_cloud.points.size(); k++) {
+        data[k] = static_cloud.points[k];
+    }
+
+    fwrite(data, sizeof(pcl::PointXYZ), 1 * num, stream);
+
+    fclose(stream);*/
+
+    if (filter_rgb_cloud_) {
+        // Create the filtering object
+        pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+        sor.setInputCloud(rgb_out_cloud);
+        sor.setMeanK(12);
+        sor.setStddevMulThresh(0.2);
+        sor.filter(*rgb_out_cloud);
+
+        pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> outrem;
+        // build the filter
+        outrem.setInputCloud(rgb_out_cloud);
+        outrem.setRadiusSearch(0.3);
+        outrem.setMinNeighborsInRadius(4);
+        // apply filter
+        outrem.filter(*rgb_out_cloud);
+    }
 
     // prepare and publish RGB colored Lidar scan
     sensor_msgs::PointCloud2 maskrcnn_cloud_msg;
@@ -319,13 +365,16 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     // prepare and publish static cloud  Lidar scan
     sensor_msgs::PointCloud2 static_cloud_msg;
-    pcl::toROSMsg(*static_cloud, static_cloud_msg);
+    pcl::toROSMsg(static_cloud, static_cloud_msg);
     static_cloud_msg.header = lidar_scan_.header;
     static_point_cloud_pub_.publish(static_cloud_msg);
 
     SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
-    SensorFusion::ProcessObjectBuilder(out_cloud_obj_builder, image_file_path,
-                                       maskrcnn_segmented_image);
+
+    if (enable_3D_detection_) {
+        SensorFusion::ProcessObjectBuilder(
+            out_cloud_obj_builder, image_file_path, maskrcnn_segmented_image);
+    }
 }
 
 void SensorFusion::ProcessObjectBuilder(

@@ -105,7 +105,12 @@ void KittiRosNode::ProcessNode() {
 
         // Process Fusion Publish Results and Raw Data
         kitti_data_operator_.PublishRawData();
-        sensor_fusion_.RGBPCL_PCL2ImageFusion();
+
+        std::string static_cloud_file_path = base_dir +
+                                             "velodyne_points/rgb_points/" +
+                                             buffer.str() + pcd_file_extension;
+
+        sensor_fusion_.RGBPCL_PCL2ImageFusion(static_cloud_file_path);
 
         std::string maskrcnn_detection_image_path =
             base_dir + maskrcnn_detection_image_dir + buffer.str() +
@@ -115,10 +120,10 @@ void KittiRosNode::ProcessNode() {
                                            buffer.str() + image_file_extension;
 
         cv::Mat maskrcnn_image = cv::imread(maskrcnn_detection_image_path, 1);
-        sensor_fusion_.SegmentedPointCloudFromMaskRCNN(&maskrcnn_image,
-                                                       box_projected_images);
+        sensor_fusion_.SegmentedPointCloudFromMaskRCNN(
+            &maskrcnn_image, box_projected_images, static_cloud_file_path);
 
-        KittiRosNode::ProcessGridCellCostmap();
+        // KittiRosNode::ProcessGridCellCostmap();
         if (i == number_of_pcd_files - 1) {
             ros::shutdown();
         }

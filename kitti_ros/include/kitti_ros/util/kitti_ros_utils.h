@@ -1,5 +1,7 @@
 #ifndef kittirosutil_H
 #define kittirosutil_H
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 #include <visualization_msgs/Marker.h>
 #include <Eigen/Eigen>
 #include <cmath>
@@ -32,6 +34,13 @@ Eigen::MatrixXf KornersWorldtoKornersImage(std::vector<float> dimensions,
 void Construct3DBoxOnImage(Eigen::MatrixXf *corners, cv::Mat *image);
 
 std::vector<geometry_msgs::Point> Eigen2GeometryMsgs(Eigen::MatrixXf corners);
+
+double scale_to_255(double a, int min, int max);
+
+cv::Mat point_cloud_to_panorama(pcl::PointCloud<pcl::PointXYZI>::Ptr points,
+                                double v_res, double h_res,
+                                std::vector<double> v_fov,
+                                std::vector<double> d_range, int y_fudge);
 
 };  // namespace kitti_ros_util
 

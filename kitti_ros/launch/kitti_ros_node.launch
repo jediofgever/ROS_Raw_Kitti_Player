@@ -1,6 +1,6 @@
 
 <launch>
-  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync/"/>
+  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_10_03_drive_0027_sync/"/>
   <param name="velodyne_link" type="string" value="velodyne_link" />
   <param name="camera_link" type="string" value="camera_link" />
   <param name="image_dir" type="string" value="image_02/data/" />
@@ -8,8 +8,13 @@
   <param name="maskrcnn_detection_image_dir" type="string" value="maskrcnn_detections/detection_image_02/" />
   <param name="image_file_extension" type="string" value=".png" />
   <param name="pcd_file_extension" type="string" value=".bin" />
-  <param name="execution_frequency" type="int" value="10" />
-  <param name="number_of_pcd_files" type="int" value="259" />
+  <param name="execution_frequency" type="int" value="50" />
+  <param name="number_of_pcd_files" type="int" value="4543" />
+
+
+  <param name="enable_3D_detection" type="bool" value="false" />
+  <param name="filter_rgb_cloud" type="bool" value="false" />
+
 
 
       <!-- ROS parameters -->
@@ -27,13 +32,14 @@
 
 <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
 
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find dbw_mkz_description)/urdf/mkz.urdf.xacro" />
+   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find dbw_mkz_description)/urdf/mkz.urdf.xacro" />
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
 
-  <!-- Launch rviz for visualization -->
-  <node pkg="rviz" type="rviz" name="my_rviz"
+ 
+ 
+<node pkg="rviz" type="rviz" name="my_rviz"
 args="-d $(find kitti_ros)config/default.rviz"/>
 
 

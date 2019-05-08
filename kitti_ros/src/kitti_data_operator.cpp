@@ -45,6 +45,7 @@ const sensor_msgs::Imu KITTIDataOperator::GetImu() const { return imu_; }
 
 void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
     // load point cloud
+
     fstream input(pcd_filename.c_str(), ios::in | ios::binary);
     if (!input.good()) {
         cerr << "Could not read  POINT CLOUD file: " << pcd_filename << endl;
@@ -52,14 +53,15 @@ void KITTIDataOperator::ReadPcdFiles(std::string pcd_filename) {
     }
     input.seekg(0, ios::beg);
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
-        new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(
+        new pcl::PointCloud<pcl::PointXYZI>);
 
     for (int i = 0; input.good() && !input.eof(); i++) {
-        pcl::PointXYZRGB point;
+        pcl::PointXYZI point;
         input.read((char *)&point.x, 3 * sizeof(float));
-        input.read((char *)&point.r, sizeof(float));
+        input.read((char *)&point.intensity, sizeof(float));
         cloud->push_back(point);
+        // ROS_INFO("R %.2f", point.intensity);
     }
     input.close();
 
