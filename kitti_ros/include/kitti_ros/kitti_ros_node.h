@@ -35,6 +35,8 @@ class KittiRosNode {
     std::string base_dir;
     std::string pcd_file_dir;
     std::string image_dir;
+    std::string imu_dir;
+
     std::string label_dir;
     std::string maskrcnn_detection_image_dir;
 
@@ -42,6 +44,7 @@ class KittiRosNode {
     std::string pcd_file_extension;
     std::string label_file_extension;
     std::string image_file_extension;
+    std::string imu_file_extension;
 
     int number_of_pcd_files;
     int node_loop_rate;

@@ -7,12 +7,15 @@
 #include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf/LinearMath/Transform.h>
+#include <tf/transform_broadcaster.h>
 #include <fstream>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include "kitti_object_operator.h"
-
 class KITTIDataOperator {
    public:
     KITTIDataOperator();
@@ -38,13 +41,37 @@ class KITTIDataOperator {
     // param [in] value: Image matrix.
     void SetCameraImage(cv::Mat value);
 
+    // Set the recorded imu.
+    // param [in] value: Image matrix.
+    void SetImu(sensor_msgs::Imu value);
+
+    // Get the recorded imu.
+    // return: Image matrix.
+    const sensor_msgs::Imu GetImu() const;
+
+    int getIMU(string filename, sensor_msgs::Imu *ros_msgImu);
+
+    void ReadIMU(std::string full_filename_oxts);
+
+    void FillKittiData();
+
+    void PublishRawData();
+
    private:
     sensor_msgs::PointCloud2 lidar_scan_;
 
     sensor_msgs::PointCloud2 lidar_scan_in_velo_cordinates_;
 
+    ros::Publisher kitti_pcl_pub_;
+
+    ros::Publisher kitti_image_pub_;
+
+    ros::Publisher kitti_imu_pub_;
+
     // Captured camera image.
     cv::Mat camera_image_;
+
+    sensor_msgs::Imu imu_;
 
     ros::NodeHandlePtr nh_;
 

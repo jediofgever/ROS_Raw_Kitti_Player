@@ -14,11 +14,11 @@
 #include <object_builders/base_object_builder.hpp>
 #include <object_builders/object_builder_manager.hpp>
 
+#include <stdio.h>
 #include "common/parameter.hpp" /* common::getSegmenterParams */
 #include "common/publisher.hpp"
 #include "common/time.hpp"     /* common::Clock */
 #include "common/types/type.h" /* PointICloudPtr */
-
 using namespace autosense;
 
 class SensorFusion {
@@ -28,7 +28,7 @@ class SensorFusion {
 
     void FillKittiData4Fusion();
 
-    void RGBPCL_PCL2ImageFusion();
+    void RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path);
 
     void ProcessLabelofBEVImage(std::string& label_infile_string,
                                 std::string image_file_path);
@@ -46,7 +46,8 @@ class SensorFusion {
     const Tools* GetTools();
 
     void SegmentedPointCloudFromMaskRCNN(cv::Mat* maskrcnn_segmented_image,
-                                         std::string image_file_path);
+                                         std::string image_file_path,
+                                         std::string static_cloud_file_path);
 
     void SetSegmentedLidarScan(sensor_msgs::PointCloud2 value);
 
@@ -75,6 +76,7 @@ class SensorFusion {
     sensor_msgs::PointCloud2 lidar_scan_;
     sensor_msgs::PointCloud2 segmented_lidar_scan_;
     cv::Mat kitti_left_cam_img_;
+    sensor_msgs::Imu imu_;
 
     boost::shared_ptr<segmenter::BaseSegmenter> ground_remover_;
     boost::shared_ptr<segmenter::BaseSegmenter> segmenter_;
@@ -93,11 +95,15 @@ class SensorFusion {
 
     ros::Publisher segmented_pointcloud_from_maskrcnn_pub_;
 
+    ros::Publisher static_point_cloud_pub_;
+
     ros::Publisher pointcloud_projected_image_pub_;
 
     ros::Publisher kitti_pcl_pub_;
 
     ros::Publisher kitti_image_pub_;
+
+    ros::Publisher kitti_imu_pub_;
 
     ros::Publisher birdview_pointcloud_image_pub_;
 
@@ -106,5 +112,9 @@ class SensorFusion {
     ros::Publisher box_projetcted_image_pub_;
 
     Eigen::MatrixXf TRANS_VELO_TO_CAM;
+
+    // PARAMS
+    bool enable_3D_detection_;
+    bool filter_rgb_cloud_;
 };
 #endif
