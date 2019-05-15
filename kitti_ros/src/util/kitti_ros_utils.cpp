@@ -204,7 +204,7 @@ double scale_to_255(double a, int min, int max) {
 cv::Mat point_cloud_to_panorama(pcl::PointCloud<pcl::PointXYZI>::Ptr points,
                                 double v_res, double h_res,
                                 std::vector<double> v_fov,
-                                std::vector<double> d_range, int y_fudge) {
+                                std::vector<int> d_range, int y_fudge) {
     /* Takes point cloud data as input and creates a 360 degree panoramic
         image, returned as a numpy array.
 
@@ -240,7 +240,7 @@ cv::Mat point_cloud_to_panorama(pcl::PointCloud<pcl::PointXYZI>::Ptr points,
     double h_above = d_plane * std::tan(v_fov[1] * (3.14 / 180));
     int y_max = (h_below + h_above + y_fudge);
 
-    cv::Mat img1(y_max + 2, x_max + 2, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat img1(y_max + 10, x_max + 10, CV_8UC3, cv::Scalar(0, 0, 0));
 
     // Projecting to 2D
     for (int i = 0; i < points->points.size(); i++) {

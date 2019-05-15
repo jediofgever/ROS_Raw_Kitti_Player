@@ -40,7 +40,7 @@ double scale_to_255(double a, int min, int max);
 cv::Mat point_cloud_to_panorama(pcl::PointCloud<pcl::PointXYZI>::Ptr points,
                                 double v_res, double h_res,
                                 std::vector<double> v_fov,
-                                std::vector<double> d_range, int y_fudge);
+                                std::vector<int> d_range, int y_fudge);
 
 };  // namespace kitti_ros_util
 

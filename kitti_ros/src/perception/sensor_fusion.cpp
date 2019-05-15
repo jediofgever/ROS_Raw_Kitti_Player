@@ -113,12 +113,13 @@ void SensorFusion::RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path) {
 
     pcl::fromROSMsg(lidar_scan_, *in_cloud);
     std::vector<double> v_fov = {-24.9, 2.0};
-    std::vector<double> d_range = {0, 1.0};
+    std::vector<int> d_range = {0, 1};
 
+    // Panoroma Lidar image
     /*cv::Mat imga = kitti_ros_util::point_cloud_to_panorama(in_cloud, 0.42,
-       0.35, v_fov, d_range, 3);*/
+    0.35, v_fov, d_range, 3);
 
-    // cv::imwrite("/home/atas/o.png", imga);
+    cv::imwrite("/home/atas/o.png", imga);*/
 
     Eigen::MatrixXf matrix_velodyne_points_in_velo_frame =
         MatrixXf::Zero(4, in_cloud->size());
@@ -175,6 +176,9 @@ void SensorFusion::RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path) {
         }
     }
 
+    // THIS IS TO WRITE .BIN FILE OF POINT CLOUD FOR USING SLAM PACAGE SUMA
+    // (https://github.com/jbehley/SuMa)
+
     /*FILE* stream;
     stream = fopen(rgb_cloud_file_path.c_str(), "wb");
     int32_t num = rgb_out_cloud->points.size();
@@ -193,8 +197,6 @@ void SensorFusion::RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path) {
 
     fclose(stream);*/
 
-    // Create birdeyeview Lidar Image , with rgb values taken from corresponding
-    // pixel
     rgb_out_cloud->width = 1;
     rgb_out_cloud->height = rgb_out_cloud->points.size();
 
@@ -255,9 +257,7 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
     cv::Mat element = cv::getStructuringElement(
         kDilationType, cv::Size(2 * 1 + 1, 2 * 1 + 1), cv::Point(1, 1));
 
-    cv::erode(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
-    /*cv::GaussianBlur(*maskrcnn_segmented_image, *maskrcnn_segmented_image,
-                     cv::Size(21, 21), 0, 0);*/
+    cv::dilate(*maskrcnn_segmented_image, *maskrcnn_segmented_image, element);
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
@@ -267,63 +267,58 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
         cv::Point point;
         point.x = matrix_image_points(0, m);
         point.y = matrix_image_points(1, m);
+        pcl::PointXYZ static_point;
 
         // Store korners in pixels only of they are on image plane
         if (point.x >= 0 && point.x <= 1242) {
             if (point.y >= 0 && point.y <= 375) {
-                if (matrix_velodyne_points_in_velo_frame(0, m) > 0) {
-                    pcl::PointXYZRGB colored_3d_point;
+                // if (matrix_velodyne_points_in_velo_frame(0, m) > 0) {
+                pcl::PointXYZRGB colored_3d_point;
 
-                    pcl::PointXYZI out_cloud_point_obj_builder;
+                pcl::PointXYZI out_cloud_point_obj_builder;
 
-                    cv::Vec3b rgb_pixel =
-                        maskrcnn_segmented_image->at<cv::Vec3b>(point.y,
-                                                                point.x);
+                cv::Vec3b rgb_pixel =
+                    maskrcnn_segmented_image->at<cv::Vec3b>(point.y, point.x);
 
-                    colored_3d_point.x =
-                        matrix_velodyne_points_in_velo_frame(0, m);
-                    colored_3d_point.y =
-                        matrix_velodyne_points_in_velo_frame(1, m);
-                    colored_3d_point.z =
-                        matrix_velodyne_points_in_velo_frame(2, m);
+                colored_3d_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+                colored_3d_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+                colored_3d_point.z = matrix_velodyne_points_in_velo_frame(2, m);
 
-                    colored_3d_point.r = rgb_pixel[2];
-                    colored_3d_point.g = rgb_pixel[1];
-                    colored_3d_point.b = rgb_pixel[0];
+                colored_3d_point.r = rgb_pixel[2];
+                colored_3d_point.g = rgb_pixel[1];
+                colored_3d_point.b = rgb_pixel[0];
 
-                    out_cloud_point_obj_builder.x =
-                        matrix_velodyne_points_in_velo_frame(0, m);
-                    out_cloud_point_obj_builder.y =
-                        matrix_velodyne_points_in_velo_frame(1, m);
-                    out_cloud_point_obj_builder.z =
-                        matrix_velodyne_points_in_velo_frame(2, m);
+                out_cloud_point_obj_builder.x =
+                    matrix_velodyne_points_in_velo_frame(0, m);
+                out_cloud_point_obj_builder.y =
+                    matrix_velodyne_points_in_velo_frame(1, m);
+                out_cloud_point_obj_builder.z =
+                    matrix_velodyne_points_in_velo_frame(2, m);
 
-                    pcl::PointXYZ static_point;
+                if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
+                    rgb_pixel[0] != 255 && colored_3d_point.x > 0 &&
+                    colored_3d_point.z > -1.75) {
+                    rgb_out_cloud->points.push_back(colored_3d_point);
+                    out_cloud_obj_builder->points.push_back(
+                        out_cloud_point_obj_builder);
 
-                    if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
-                        rgb_pixel[0] != 255 && colored_3d_point.x > 0 &&
-                        colored_3d_point.z > -1.65) {
-                        rgb_out_cloud->points.push_back(colored_3d_point);
-                        out_cloud_obj_builder->points.push_back(
-                            out_cloud_point_obj_builder);
-
-                        static_point.x =
-                            matrix_velodyne_points_in_velo_frame(0, m);
-                        static_point.y =
-                            matrix_velodyne_points_in_velo_frame(1, m);
-                        static_point.z = -1.74;
-                        static_cloud.points.push_back(static_point);
-                    } else {
-                        static_point.x =
-                            matrix_velodyne_points_in_velo_frame(0, m);
-                        static_point.y =
-                            matrix_velodyne_points_in_velo_frame(1, m);
-                        static_point.z =
-                            matrix_velodyne_points_in_velo_frame(2, m);
-                        static_cloud.points.push_back(static_point);
-                    }
+                    static_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+                    static_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+                    static_point.z = -1.74;
+                    // static_cloud.points.push_back(static_point);
+                } else {
+                    static_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+                    static_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+                    static_point.z = matrix_velodyne_points_in_velo_frame(2, m);
+                    static_cloud.points.push_back(static_point);
                 }
+                //}
             }
+        } else {
+            static_point.x = matrix_velodyne_points_in_velo_frame(0, m);
+            static_point.y = matrix_velodyne_points_in_velo_frame(1, m);
+            static_point.z = matrix_velodyne_points_in_velo_frame(2, m);
+            static_cloud.points.push_back(static_point);
         }
     }
 
@@ -371,7 +366,7 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
     SensorFusion::SetSegmentedLidarScan(maskrcnn_cloud_msg);
 
-    if (enable_3D_detection_) {
+    if (enable_3D_detection_ && out_cloud_obj_builder->points.size() > 0) {
         SensorFusion::ProcessObjectBuilder(
             out_cloud_obj_builder, image_file_path, maskrcnn_segmented_image);
     }
