@@ -51,11 +51,15 @@ It's convenient if the ROS environment variables are automatically added to your
  > cd .. && catkin_make 
 
  ## Reconfigure KITTI data Path in launch file 
+ 
 
  under this directory 'ROS_Raw_Kitti_Player/kitti_ros/launch',  find 'kitti_ros_node.launch' file,
  change the data paths according to your own envoirmment. For example my base directory for KITTI data is as follow ; 
 
- > /home/atas/kitti_data/2011_09_26/2011_09_26_drive_0001_sync/
+An example scenario that you can download here ; https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS
+download this kitti sequence(0052) and place it under your directory, it should look somethinglike this
+
+ > /home/atas/kitti_data/2011_09_26/2011_09_26_drive_0052_sync/
 
  basically once you need to change username with yours , it should be fine afterwards.
 
