@@ -1,6 +1,6 @@
 
 <launch>
-  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_10_03_drive_0042_sync/"/>
+  <param name="base_dir" type="string" value= "/home/atas/kitti_data/2011_09_26/2011_09_26_drive_0052_sync/"/>
   <param name="velodyne_link" type="string" value="velodyne_link" />
   <param name="camera_link" type="string" value="camera_link" />
   <param name="image_dir" type="string" value="image_02/data/" />

@@ -30,7 +30,7 @@ detect: {
     ### Ground RANSAC Segmenter
     # 0.3 for better perforamce
     ## default: 0.3
-    sac_distance_threshold: 0.2,
+    sac_distance_threshold: 0.1,
     ## default: 100
     sac_max_iteration: 100,
     ## default: 0.99
@@ -51,22 +51,22 @@ detect: {
     ## increase euclidean distance tolerence between adjacent region
     # type: float
     # default: 0.2
-    rec_region_delta_tolerance: 0.2,
+    rec_region_delta_tolerance: 0.1,
     ## minimum/maximum cluster's point number
     # type: int
     # default: 5/30000
-    rec_min_cluster_size: 20,
+    rec_min_cluster_size: 40,
     #rec_min_cluster_size: 50,
     rec_max_cluster_size: 30000,
     ## Clusters merged between regions
     # type: bool
     # default: false
     #rec_use_region_merge: false,
-    rec_use_region_merge: true,
+    rec_use_region_merge: false,
     ## Merge corresponding ground box overlap IoU threshold
     # type: float
     # default: 0., merge if there is overlap
-    rec_region_merge_tolerance: 4.0,
+    rec_region_merge_tolerance: 0.0,
 
     ### Euclidean Cluster Segmenter
     # 0.2,5,30000 in online_learning

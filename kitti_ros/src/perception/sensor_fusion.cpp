@@ -138,6 +138,7 @@ void SensorFusion::RGBPCL_PCL2ImageFusion(std::string rgb_cloud_file_path) {
 
     Eigen::MatrixXf matrix_image_points =
         tools_->transformCamToRectCam(matrix_velodyne_points_in_cam_frame);
+
     matrix_image_points = tools_->transformRectCamToImage(matrix_image_points);
 
     for (int m = 0; m < matrix_image_points.cols(); m++) {
@@ -297,7 +298,7 @@ void SensorFusion::SegmentedPointCloudFromMaskRCNN(
 
                 if (rgb_pixel[2] != 255 && rgb_pixel[1] != 255 &&
                     rgb_pixel[0] != 255 && colored_3d_point.x > 0 &&
-                    colored_3d_point.z > -1.75) {
+                    colored_3d_point.z > -1.55) {
                     rgb_out_cloud->points.push_back(colored_3d_point);
                     out_cloud_obj_builder->points.push_back(
                         out_cloud_point_obj_builder);
