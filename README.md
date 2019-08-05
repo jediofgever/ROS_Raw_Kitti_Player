@@ -53,8 +53,10 @@ It's convenient if the ROS environment variables are automatically added to your
  ## Getting Instance Segmented Images of KITTI 
  
  **for the testing without installing maskrcnn and other dependencies;**
- , I provide obtained masks for scenario; `2011_09_26_drive_0001_sync` and `2011_09_26_drive_0052_sync` ,download the provided files [0001](https://drive.google.com/file/d/1f6hxpFloVp8Gwn6qe6GjmKyY15Le5E0j/view), put the `maskrcnn_detections` folder under `2011_09_26_drive_0001_sync/` and this should be all 
- for `0052` [here](https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS)
+ , I provide obtained masks for scenario; `2011_09_26_drive_0001_sync` and `2011_09_26_drive_0052_sync` , [ for 0001](https://drive.google.com/file/d/1f6hxpFloVp8Gwn6qe6GjmKyY15Le5E0j/view), put the `maskrcnn_detections` folder under `2011_09_26_drive_0001_sync/` 
+ 
+ 
+  [for `0052`](https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS)
 
 
 **for a quick start using maskrcnn;**
