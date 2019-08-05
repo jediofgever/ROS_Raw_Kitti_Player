@@ -49,6 +49,18 @@ It's convenient if the ROS environment variables are automatically added to your
  > git submodule update --init --recursive
 
  > cd .. && catkin_make 
+ 
+ ## Getting Instance Segmented Images of KITTI 
+ 
+ **for the testing without installing maskrcnn and other dependencies;**
+ , I provide obtained masks for scenario; `2011_09_26_drive_0001_sync` and `2011_09_26_drive_0052_sync` ,download the provided files [0001](https://drive.google.com/file/d/1f6hxpFloVp8Gwn6qe6GjmKyY15Le5E0j/view), put the `maskrcnn_detections` folder under `2011_09_26_drive_0001_sync/` and this should be all 
+ for `0052` [here](https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS)
+
+
+**for a quick start using maskrcnn;**
+1.  [maskrcnn that I used](https://github.com/facebookresearch/maskrcnn-benchmark)  bases on Pytorch, and some other helper libs. A complete guide to install maskrcnn and requirements can be found [here](https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/INSTALL.md)
+2. after you have maskrcnn on your system , download raw kitti images of the scenario that you would like to test. Maskrcnn provides a script to infer masks on rgb images under demo directory. I have modified that script to obtain masks in automated fashion, [here](https://gist.github.com/jediofgever/12bcab2b6389208c6ecab248bdab1c19) is the modified script(the paths to kitti images should be changed to according to your system path)
+3. the obtained masks should be on a white background, so that when we project lidar point clouds  onto this image we can differantiate objects and non-objects. to write masks on a white background ; under `demo`   directory of maskrcnn,` predictor.py ` should be modified as [this one](https://gist.github.com/jediofgever/0e0e0db7eb833ecce51405306662c53b) (very small change)
 
  ## Reconfigure KITTI data Path in launch file 
  
