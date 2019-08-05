@@ -123,7 +123,7 @@ void KittiRosNode::ProcessNode() {
         sensor_fusion_.SegmentedPointCloudFromMaskRCNN(
             &maskrcnn_image, box_projected_images, static_cloud_file_path);
 
-        // KittiRosNode::ProcessGridCellCostmap();
+        KittiRosNode::ProcessGridCellCostmap();
         if (i == number_of_pcd_files - 1) {
             ros::shutdown();
         }

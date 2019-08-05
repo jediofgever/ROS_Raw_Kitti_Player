@@ -137,18 +137,18 @@ void GridCellCostmap::ProcessGridMap(
          iter_x != iter_x.end(); ++iter_x) {
         // assign a current point to Point32 type for simplicity
         // chechk z axis bounds
-        if (iter_x[1] > min_obstacle_height_ &&
-            iter_x[1] < max_obstacle_height_) {
+        if (iter_x[2] > min_obstacle_height_ &&
+            iter_x[2] < max_obstacle_height_) {
             // Check x , y axes bounds
-            if ((iter_x[2] > -grid_height_ / 2 &&
-                 iter_x[2] < grid_height_ / 2) &&
-                (iter_x[0] > -grid_width_ / 2 && iter_x[0] < grid_width_ / 2)) {
+            if ((iter_x[0] > -grid_height_ / 2 &&
+                 iter_x[0] < grid_height_ / 2) &&
+                (iter_x[1] > -grid_width_ / 2 && iter_x[1] < grid_width_ / 2)) {
                 // This point is on some obstacle , so we change the
                 // corresponding value in local_grid_map_.data to
                 // kOccupiedCellValue(99)
                 geometry_msgs::Point32 aux_point;
-                aux_point.x = iter_x[0];
-                aux_point.y = -iter_x[2];
+                aux_point.x = -iter_x[1];
+                aux_point.y = -iter_x[0];
                 ModifyCostmapPointValue(grid, obstacle_value_, aux_point);
             }
         }

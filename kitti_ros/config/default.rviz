@@ -8,6 +8,7 @@ Panels:
         - /PointCloud22
         - /PointCloud23
         - /Image1
+        - /Map1
       Splitter Ratio: 0.5
     Tree Height: 135
   - Class: rviz/Selection
@@ -29,6 +30,8 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: PointCloud2
+Toolbars:
+  toolButtonStyle: 2
 Visualization Manager:
   Class: ""
   Displays:
@@ -122,7 +125,7 @@ Visualization Manager:
       Marker Topic: /detected_obstacles_from_local_costmap_segmented_pcl
       Name: MarkerArray
       Namespaces:
-        {}
+        DetectionBox: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -220,9 +223,9 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
-    - Alpha: 0.699999988
+    - Alpha: 0.899999976
       Class: rviz/Map
-      Color Scheme: map
+      Color Scheme: costmap
       Draw Behind: false
       Enabled: true
       Name: Map
@@ -255,25 +258,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 21.1884041
+      Distance: 81.3607941
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 14.3429489
-        Y: -1.23693192
-        Z: 3.66272879
+        X: 9.59230137
+        Y: -2.55056334
+        Z: -4.53605127
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -0.0452027358
+      Pitch: 0.449797302
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.01804852
+      Yaw: 2.7730484
     Saved: ~
 Window Geometry:
   Displays:
