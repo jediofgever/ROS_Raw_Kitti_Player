@@ -53,10 +53,10 @@ It's convenient if the ROS environment variables are automatically added to your
  ## Getting Instance Segmented Images of KITTI 
  
  **for the testing without installing maskrcnn and other dependencies;**
- , I provide obtained masks for scenario; `2011_09_26_drive_0001_sync` and `2011_09_26_drive_0052_sync` , [ for 0001](https://drive.google.com/file/d/1f6hxpFloVp8Gwn6qe6GjmKyY15Le5E0j/view), put the `maskrcnn_detections` folder under `2011_09_26_drive_0001_sync/` 
- 
- 
-  [for `0052`](https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS)
+ , I provide obtained masks for scenario;  `2011_09_26_drive_0052_sync` Download files 
+  for `0052` [here](https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS)  and place it under your base directory, which should look something like this;
+  
+> /home/atas/kitti_data/2011_09_26/2011_09_26_drive_0052_sync/
 
 
 **for a quick start using maskrcnn;**
@@ -70,8 +70,6 @@ It's convenient if the ROS environment variables are automatically added to your
  under this directory 'ROS_Raw_Kitti_Player/kitti_ros/launch',  find 'kitti_ros_node.launch' file,
  change the data paths according to your own envoirmment. For example my base directory for KITTI data is as follow ; 
 
-An example scenario that you can download here ; https://drive.google.com/open?id=1aWIw4FHLvf8fbpLeF_E7K6RA38mHHqCS
-download this kitti sequence(0052) and place it under your directory, it should look somethinglike this
 
  > /home/atas/kitti_data/2011_09_26/2011_09_26_drive_0052_sync/
 
